@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://kit.fontawesome.com/5af3974b3f.css" crossorigin="anonymous">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <style>
+      td {
+        border: 5px solid #212529;
+        text-align: center;
+        font-size: 125%;
+      }
+      .my-custom-scrollbar {
+      position: relative;
+      
+      overflow: auto;
+      }
+      .table-wrapper-scroll-y {
+      display: block;
+      }
+      .a {
+        background-color: #a5232e;
+      }
+      .b {
+        background-color: #c57000;
+      }
+      .c {
+        background-color: rgba(0, 255, 0, 0.568);
+        color: black;
+      }
+    </style>
+    <title>Document</title>
+</head>
+
+
+
+<body class="bg-dark">
+    <h1 class="text-center fw-bold fs-1 text-white">ALMANYA MUHASEBE</h1>
+
+      <form class='d-flex flex-row-reverse' style="margin-right: 50px;" method = "POST" id= "deneme">
+        {% csrf_token %}
+        
+      <div class="btn-group" role="group" aria-label="Basic example">
+        <a type='button'  href="../downloadfile/almanya" class='btn btn-outline-light btn-lg mx-auto my-2 ' target="_blank"><i class="fas fa-download"></i></a>
+
+        <!-- Button trigger modal -->
+      <button type="button" class="btn btn-outline-light btn-lg mx-auto my-2 " data-bs-toggle="modal" data-bs-target="#exampleModal">
+        DOSYA YÜKLE
+      </button>
+      {% if len > 0 %}  
+      <button class='btn btn-outline-light btn-lg  mx-auto my-2'  name="update_order_list" type="submit" >GUNCELLE</button>
+      {%else%}
+      <button class='btn btn-outline-light btn-lg  mx-auto my-2'  type="button" data-bs-toggle="modal" data-bs-target="#dateModal">GUNCELLE</button>
+      {%endif%}
+
+    </div>
+  
+
+
+<!-- Button trigger modal -->
+
+
+<!-- Modal -->
+<div class="modal fade" id="dateModal" tabindex="-1" aria-labelledby="dateModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="dateModalLabel">LUTFEN ARAMAYA BASLAYACAK BIR TARIH G</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="date" name="date">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">KAPAT</button>
+        <button type="submit" name="update_order_list" class="btn btn-primary">KAYDET</button>
+      </div>
+    </div>
+  </div>
+</div>
+</form>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="exampleModalLabel">DOSYA YÜKLEME</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              {{ form.file }}
+              
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+            <button name="load_excel" type="submit"class="btn btn-primary">Kaydet</button>
+          </div>
+        </div>
+      </div>
+        </form>
+      </div>
+      
+  
+
+    
+
+    <table class="table  mx-auto text-white" style="width: 98%;">
+        <thead>
+          <tr>
+            <th scope="col">TARIH </th>
+            <th scope="col">ASIN</th>
+            <th scope="col">SATICI SIPARIS NUMARASI </th>
+            <th scope="col">ALICI SIPARIS NUMARASI </th>
+            <th scope="col">SATIS FIYATI (EUR)</th>
+            <th scope="col">AMAZON FEE (EUR)</th>
+            <th scope="col">ALIŞ FİYATI (USD) </th>
+            <th>ARA DEPO MALİYETİ (EUR)</th>
+            <th scope="col">KAR</th>
+            <th scope="col">YUZDELIK KAR</th>
+          </tr>
+        </thead>
+        
+        <tbody>
+        {% for x in info %}    
+          
+          <tr class="{% if x.YUZDELIK_KAR <= 0 %} a  {% elif x.YUZDELIK_KAR >= 0.15 %} c {% elif x.KAR > 0%} b  {% endif %}   border: 5px solid #212529;">
+          
+            <td style="border-radius: 10px 0px 0px 10px;">{{ x.TARIH }}</td>
+            <td >{{ x.ASIN }}</td>
+            <td>{{ x.SATICI_SIPARIS_NUMARASI }}</td>
+            <td>{{ x.ALICI_SIPARIS_NUMARASI }}</td>
+            <td>{{ x.SATIS_FIYATI }}</td>
+            <td>{{ x.AMAZON_FEE }}</td>
+            <form method = "POST" id={{ x.SATICI_SIPARIS_NUMARASI }}> 
+            {% csrf_token %} 
+            <td >
+                <input type="hidden" class="form-control" name="order_id" value={{ x.SATICI_SIPARIS_NUMARASI }}>
+               
+                  <div class="col">
+                    <input type="text" class="form-control" name="product_cost" value={{ x.MALIYET }}>
+                  </div>
+                 
+                
+                </td>
+                <td>
+                  <div class="col">
+                    <input type="text" class="form-control" name="warehouse_cost" value={{ x.DEPO_MALIYET}}>
+                  </div>
+                </td>
+              </form>
+            <td>{{ x.KAR }}</td>
+            <td>{{ x.YUZDELIK_KAR }}</td>
+            <td style="border-radius: 0px 10px 10px 0px;"><button name="update_cost" class="update btn btn-secondary" type="submit" form={{ x.SATICI_SIPARIS_NUMARASI }} value="Submit">GÜNCELLE</button></td>
+          </tr>
+        {% endfor %}
+      
+      
+        </tbody>
+      </table>
+    
+    
+    
+
+      {% if message %}
+      <script>
+        alert('{{ message }}');
+      </script>
+      {% endif %}
+      
+      
+      <script src="https://kit.fontawesome.com/5af3974b3f.js" crossorigin="anonymous"></script>
+
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+
+</body>
+</html>

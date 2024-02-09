@@ -1,0 +1,507 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://kit.fontawesome.com/5af3974b3f.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'css/fbamarket.css'%}">
+
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:ital@1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+      function addParameterToURL(param){
+         _url = location.href;
+         _url += (_url.split('?')[1] ? '&':'?') + param;
+         return _url;
+       }
+
+   </script>
+   <style>
+
+        th {
+            font-size : 13px!important;
+
+        }
+    </style>
+
+    <title>UploadProductFileDemo</title>
+</head>
+<body>
+
+
+    <div class="row w-100">
+        <nav class="navbar navbar-market  navbar-expand-xl  navbar-light  bg-faded">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="../fba"> <img class="" src="{% static 'images/bsr-logo.png'%}" alt="BSRAmazon"> </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse " id="navbarNavAltMarkup">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="../fba">ANASAYFA</a>
+                      </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="../fba/ca" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                          CANADA
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                          <li><a class="dropdown-item" href="../fba/ca">TAMAMLANMIŞ</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item" href="../fba/ca/pool">HAVUZ</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item" href="../fba/ca/deleted">SİLİNENLER</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="../fba/ja" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                          JAPONYA
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="../fba/ja">TAMAMLANMIŞ</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="../fba/ja/pool">HAVUZ</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="../fba/ja/deleted">SİLİNENLER</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="../fba/au" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        AVUSTRALYA
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="../fba/au">TAMAMLANMIŞ</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="../fba/au/pool">HAVUZ</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="../fba/au/deleted">SİLİNENLER</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="../fba/de" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                          ALMANYA
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                          <li><a class="dropdown-item" href="../fba/de">TAMAMLANMIŞ</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item" href="../fba/de/pool">HAVUZ</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item" href="../fba/de/deleted">SİLİNENLER</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="../fba/fr" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                          FRANSA
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                          <li><a class="dropdown-item" href="../fba/fr">TAMAMLANMIŞ</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item" href="../fba/fr/pool">HAVUZ</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item" href="../fba/fr/deleted">SİLİNENLER</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="../fba/uk" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                          İNGİLTERE
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                          <li><a class="dropdown-item" href="../fba/uk">TAMAMLANMIŞ</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item" href="../fba/uk/pool">HAVUZ</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item" href="../fba/uk/deleted">SİLİNENLER</a></li>
+
+
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        </nav>
+    </div>
+
+
+
+    <div class="outer-container">
+      <div class="accordion" id="accordionExample">
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button text-center fs-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+              FİLTRELER
+            </button>
+          </h2>
+          <div id="collapseOne" class="accordion-collapse collapse  row" data-bs-parent="#filters">
+            <div class="accordion-body mb-1">
+              <form action="" method="get" class="row w-100">
+                <input type="hidden" name="page" value="1">
+              <div class="input-group w-25  my-1">
+                <span class="input-group-text">Drop Count</span>
+                <input type="number" name="drop_count_min" placeholder="min" class="form-control" value="{{request.GET.drop_count_min}}">
+                <input type="number" name="drop_count_max" placeholder="max"  class="form-control" value="{{request.GET.drop_count_max}}">
+              </div>
+              <div class="input-group w-25  my-1">
+                <span class="input-group-text">Kar Oranı</span>
+                <input type="number" name="profit_percentage_min" placeholder="min" class="form-control" value="{{request.GET.profit_percentage_min}}">
+                <input type="number" name="profit_percentage_max" placeholder="max"  class="form-control" value="{{request.GET.profit_percentage_max}}">
+              </div>
+              <div class="input-group w-25 my-1">
+                <span class="input-group-text">Satış Sayısı</span>
+                <input type="number" name="sales_info_min" placeholder="min" class="form-control" value="{{request.GET.sales_info_min}}">
+                <input type="number" name="sales_info_max" placeholder="max"  class="form-control" value="{{request.GET.sales_info_max}}">
+              </div>
+              <div class="input-group w-25 my-1">
+                <span class="input-group-text">Fba Satıcı Sayısı</span>
+                <input type="number" name="fba_seller_count_min" placeholder="min" class="form-control" value="{{request.GET.fba_seller_count_min}}">
+                <input type="number" name="fba_seller_count_max" placeholder="max"  class="form-control" value="{{request.GET.fba_seller_count_max}}">
+              </div>
+              <div class="input-group w-25 my-1">
+                <span class="input-group-text">Amazon SP</span>
+                <input type="number" name="amazon_sale_price_min" placeholder="min" class="form-control" value="{{request.GET.amazon_sale_price_min}}">
+                <input type="number" name="amazon_sale_price_max" placeholder="max"  class="form-control" value="{{request.GET.amazon_sale_price_max}}">
+              </div>
+              <div class="input-group w-25 my-1">
+                <span class="input-group-text">Ağırlık (lbs)</span>
+                <input type="number" name="weight_min" placeholder="min" class="form-control" value="{{request.GET.weight_min}}">
+                <input type="number" name="weight_max" placeholder="max"  class="form-control" value="{{request.GET.weight_max}}">
+              </div>
+              <button type="submit" class="btn btn-primary col-1 my-1" style="width: fit-content; height: fit-content;"> UYGULA </button>
+            </div>
+          </form>
+          </div>
+        </div>
+      </div>
+    <form action="" method="POST" class='show-loading-after-submit'>{% csrf_token %}
+        <div class="card">
+            <div class=" card-header w-100 d-flex">
+                <div class="col-3 d-flex justify-content-start">
+                  {% for c_code in country %}
+                   {% with "images/"|add:c_code as template %}
+
+                  <img class="my-auto" src="{% static template|add:'.svg' %}" alt="" style="height: 50px;">
+                  {% endwith %}
+                  {% endfor %}
+
+                    <h4 class="my-auto ms-3 mt-2">Ürün Detayları</h4>
+                </div>
+                <div class="col-9 d-flex justify-content-end">
+                  <form action="" class='show-loading-after-submit' method="POST">
+                    <div class="modal fade" id="text-asin-modal" tabindex="-1" aria-labelledby="text-asin-modalLabel" aria-hidden="true">
+                      <div class="modal-dialog">{% csrf_token %}
+                            <div class="modal-content">
+                              <div class="modal-header">
+                                <h1 class="modal-title fs-5" id="text-asin-modalLabel">ASIN EKLE</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <div class="modal-body">
+                                    <div class="form-floating mx-auto">
+                                      <textarea class="form-control" placeholder="Leave a comment here" name="asintext" id="floatingTextarea2" style="height: 100px"></textarea>
+                                      <label for="floatingTextarea2">ASINLER</label>
+                                    </div>
+                                  </div>
+                                  <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">IPTAL</button>
+                                    <button type="submit" name="asin_text_upload" class="btn btn-primary">YUKLE</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </form>
+
+                    <button type="button" class="btn btn-primary mt-2 ms-3" data-bs-toggle="modal" data-bs-target="#text-asin-modal" style="height: fit-content;">
+                        TEXT ASIN YUKLE
+                    </button>
+
+                    <form action="" method="POST" enctype="multipart/form-data" class='show-loading-after-submit' >{% csrf_token %}
+                    <div class="modal fade" id="keepa-excel" tabindex="-1" aria-labelledby="keepa-excelLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h1 class="modal-title fs-5" id="keepa-excelLabel">EXCEL DOSYALARINI YÜKLE</h1>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="">
+                                        <label for="com_asin" class="form-label">COM KEEPA DOSYASI</label>
+                                    </br>
+                                        {{form.com_asin }}
+
+                                        <label for="target_asin" class="form-label">HEDEF PAZAR KEEPA DOSYASI</label>
+                                        {{ form.target_asin }}
+
+                                      </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">IPTAL</button>
+                                    <button type="submit" name="asin_file_upload" class="btn btn-primary">YUKLE</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                  </form>
+                  {% if not country.0 == 'AU' %}
+                    <button type="button" class="btn btn-primary my-auto ms-3 mt-2" data-bs-toggle="modal" data-bs-target="#keepa-excel">
+                        KEEPA DOSYALARI İLE YÜKLE
+                    </button>
+                  {% endif %}
+                  <form action="" method="POST" class ='show-loading-after-submit'>{% csrf_token %}
+                    <div class="modal fade" id="store-front" tabindex="-1" aria-labelledby="store-frontLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h1 class="modal-title fs-5" id="store-frontLabel">MAĞAZA LİNKİ EKLE</h1>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="form-floating mx-auto">
+                                        <textarea class="form-control" placeholder="Leave a comment here" name="storelink" id="floatingTextarea2" style="height: 100px"></textarea>
+                                        <label for="floatingTextarea2">Mağaza Linki</label>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">IPTAL</button>
+                                    <button type="submit" name="asin_link_upload" class="btn btn-primary">YUKLE</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                  </form>
+
+
+
+                      <button type="submit" name="download_products" class="btn btn-primary my-auto ms-3 mt-2">
+                        ÜRÜNLERİ İNDİR
+                      </button>
+
+
+                </div>
+            </div>
+            <div class="modal fade" id="delete_asins" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">ASİNLERİ SİL</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    Seçili Asinleri Silmek İstediğinize Emin Misiniz ?
+                  </div>
+                  <div class="modal-footer">
+
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İPTAL</button>
+                    <button type="submit" name="delete_products" class="btn btn-primary">SİL</button>
+
+                    </div>
+                </div>
+              </div>
+            </div>
+              <form action="" method="post" class ='show-loading-after-submit'>{%csrf_token%}
+              <div class="modal fade" id="all_Selected_Modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h1 class="modal-title fs-5" id="exampleModalLabel">Tüm Ürünlerle Yapmak İstediğiniz İşlemi Seçin</h1>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <input type="radio" class="btn-check" name="selected_all_choices" id="send_pool_all" autocomplete="off" value="send_pool_all" checked >
+                      <label class="btn" for="send_pool_all">Ürünleri Havuza Gönder</label>
+
+                      <input type="radio" class="btn-check" name="selected_all_choices" id="download_all" autocomplete="off" value="download_all">
+                      <label class="btn" for="download_all">Ürünleri İndir</label>
+
+                      <input type="radio" class="btn-check" name="selected_all_choices" id="delete_all" autocomplete="off" value="delete_all">
+                      <label class="btn" for="delete_all">Ürünleri Sil</label>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                      <button type="submit" name="all_selected" class="btn btn-primary">Uygula</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </form>
+            <div class="card-body">
+              <table class="table table-hover w-100 caption-top">
+                <caption>
+                  <div class="row d-flex justify-content-center">
+                    <a  class="my-auto col-3" style='visibility:hidden;' id="select_all_button" data-bs-toggle="modal" data-bs-target="#all_Selected_Modal">
+                      Tüm Ürünleri Seç : ({{len_all_products}})
+                    </a>
+
+
+                    <p class="my-auto col-3">Kuyruktaki Asin Sayısı : {{queue.asin_in_queue}}</p>
+
+                        <button type="button" class="btn btn-danger col-2" data-bs-toggle="modal" data-bs-target="#delete_asins" style="width: fit-content;">
+                          ASİNLERİ SİL
+                        </button>
+                            <button type="submit" name='send_pool' class=" btn btn-primary col-2">
+                                HAVUZA AKTAR
+                            </button>
+                        </div>
+                    </caption>
+
+                    <thead>
+                      {% load my_tags %}
+                      <tr>
+                        <th scope="col"><input class="form-check-input "  type="checkbox" onclick="toggle(this)"></th>
+                        <th style="width: 10%;" scope="col ">Urun Adi</th>
+                        <th scope="col ">ASIN</th>
+                        <th scope="col ">SALESRANK</th>
+                        <th scope="col ">DROP COUNT</th>
+                        <th scope="col ">ALIŞ FİYATI</th>
+                        <th scope="col ">SATIŞ FİYATI</th>
+                        <th scope="col ">ORAN</th>
+                        <th scope="col ">MALİYET</th>
+                        <th scope="col ">KAR</th>
+                        <th scope="col ">KAR ORANI <a type="button" class="fa-solid fa-sort" style="background-color: transparent; border: none;" href="?{% param_replace sortByProfitPercentage=sortByProfitPercentageValue %}"></a></th>
+                        <th scope="col ">SATIŞ SAYISI<a type="button" class="fa-solid fa-sort" style="background-color: transparent; border: none;" href="?{% param_replace sortBySalesInfo=sortBySalesInfoValue %}"></a></th>
+                        <th scope="col ">AĞIRLIK(lbs)</th>
+                        <th scope="col ">FBA SATICI SAYISI<a type="button" class="fa-solid fa-sort" style="background-color: transparent; border: none;" href="?{% param_replace sortByFBASeller=sortByFBASellerValue %}"></a></button></th>
+                        <th scope="col ">BUYBOX FBA ?</th>
+                        <th scope="col ">AMAZON ?</th>
+                        <th scope="col ">VARYASYON SAYISI</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for product in asins%}
+                      <tr>
+                        <td scope="row" class="align-middle">  <input class="form-check-input " name="poolCheckBox" type="checkbox" id="checkboxNoLabel" value="{{product.Asin}}" aria-label="..."></th>
+                        <td class="align-middle" scope="row"><a href="https://www.amazon.com/dp/{{product.Asin}}" target="_blank">{{product.Title|slice:50}}...</a></th>
+                        <td class="align-middle"><a href="{{target_link}}{{product.Asin}}" target="_blank">{{product.Asin}}</a></td>
+                        <td> <p class="text-center"
+                          data-bs-toggle="tooltip" data-bs-placement="top"
+                          data-bs-custom-class="custom-tooltip"
+                          data-bs-title="SalesRank">
+                            <i class="fa-solid fa-ranking-star"></i> {{product.SalesRank}}
+                          </p>
+                         <p class="text-center"
+                          data-bs-toggle="tooltip" data-bs-placement="top"
+                          data-bs-custom-class="custom-tooltip"
+                          data-bs-title="SalesRank 90 day avg.">
+                            <i class="fa-solid fa-ranking-star"></i> {{product.SalesRank90}}
+                          </p> </td>
+                        <td class="align-middle">{{product.Drop_Count}}</td>
+                        <td class="align-middle">{{product.Buy_Price}}</td>
+                        <td>
+                          <p class="text-center"
+                          data-bs-toggle="tooltip" data-bs-placement="top"
+                          data-bs-custom-class="custom-tooltip"
+                          data-bs-title="Satis Fiyati">
+                            <i class="fa-solid fa-money-bill"></i> {{product.Sale_Price}}
+                          </p>
+                         <p class="text-center"
+                          data-bs-toggle="tooltip" data-bs-placement="top"
+                          data-bs-custom-class="custom-tooltip"
+                          data-bs-title="Buybox Lowest">
+                            <i class="fa-solid fa-money-bill"></i> {{product.Buybox_Lowest}}
+                          </p> </td>
+                        <td class="align-middle">{{product.Ratio|floatformat:2}}</td>
+                        <td class="align-middle">{{product.Cost|floatformat:2}}</td>
+                        <td class="align-middle">{{product.Profit|floatformat:2}}</td>
+                        <td class="align-middle">{{product.Profit_Percentage|floatformat:2 }}</td>
+                        <td class="align-middle">{{product.Sales_Info}}</td>
+                        <td class="align-middle">{{product.Weight|floatformat:2}}</td>
+                        <td class="align-middle">{{product.Fba_Seller_Count}}</td>
+                        <td class="align-middle">{{product.Is_Buybox_Fba}}</td>
+                        <td class="align-middle">{{product.Amazon_Current}}</td>
+                        <td class="align-middle">{{product.Variation_Asins}}</td>
+                        </tr>
+
+                      {% endfor %}
+                    </form>
+
+                    </tbody>
+                  </table>
+            </div>
+
+
+            <nav aria-label="Page navigation example">
+              <ul class="pagination justify-content-center">
+
+
+                {% if asins.has_previous%}
+                <li class="page-item"><a href="?{% param_replace page=asins.previous_page_number %}" class="page-link">{{asins.previous_page_number}}</a></li>
+                {%endif%}
+                <li class="page-item"><a href="?{% param_replace page=asins.number %}" class="page-link">{{asins.number}}</a></li>
+                {% if asins.has_next%}
+                <li class="page-item"><a href="?{% param_replace page=asins.next_page_number %}" class="page-link">{{asins.next_page_number}}</a></li>
+                {%endif%}
+
+              </ul>
+            </nav>
+          </div>
+        </form>
+
+
+    </div>
+
+    <script language="JavaScript">
+        function toggle(source) {
+          checkboxes = document.getElementsByName('poolCheckBox');
+          for(var i=0, n=checkboxes.length;i<n;i++) {
+            checkboxes[i].checked = source.checked;
+          }
+          const SELECT_ALL_BUTTON_ID = 'select_all_button'
+          const SELECT_ALL_BUTTON = document.getElementById(SELECT_ALL_BUTTON_ID)
+          if (SELECT_ALL_BUTTON.style.visibility ==  'hidden') {
+            SELECT_ALL_BUTTON.style.visibility = 'visible'
+          }else {
+            SELECT_ALL_BUTTON.style.visibility = 'hidden'
+          }
+        }
+      </script>
+    <script>
+    function showLoadingModal(){
+        loadingModal = document.getElementById('loadingModal')
+        loadingModal.style.display = 'block';
+    }
+
+    //For forms: add the class "show-loading-after-submit" to any form you want to show the loader
+    var formsToDelay = document.getElementsByClassName('show-loading-after-submit');
+    for (var i = 0; i < formsToDelay.length; i++) {
+        formsToDelay[i].addEventListener('submit', showLoadingModal);
+    }
+
+    //For urls: add the class "show-loading-after-click" to any url (a element) you want to show the loader
+    function showLoaderOnUrlClick(url) {
+        showLoadingModal()
+      window.location=url
+  }
+
+    // Not used
+    function showLoader(){
+        bodyEl = document.getElementsByTagName('body')
+        bodyEl.append("<div><div id='loadingModal' class='modal' style='visibility:visible; opacity: 1; display: none;'><div class='modal__inner p3 center' style='height:600px;'><h3>Please wait...</h3><p>Your request is processing. This might take a few moments.</p><img src=\"{% static 'img/wait.gif' %}\"></div></div></div>");
+    }
+</script>
+
+
+    <div id="loadingModal" class="modal fixed-top bg-dark " style=" visibility:visible; z-index:2000; opacity: 0.8; display: none;">
+        <div class="modal__inner p3 center position-relative " style='height:100%; width:100%;'>
+            <div class='position-absolute top-50 start-50 translate-middle '>
+            <div class="spinner-grow text-light " role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <div class="spinner-grow text-light" role="status">
+              <span class="visually-hidden">Loading...</span>
+              </div>
+            <div class="spinner-grow text-light" role="status">
+              <span class="visually-hidden">Loading...</span>
+              </div>
+                </div>
+                  </div>
+                    </div>
+    <script src="https://kit.fontawesome.com/5af3974b3f.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+    <script>
+      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+      const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+    </script>
+
+</body>
+</html>

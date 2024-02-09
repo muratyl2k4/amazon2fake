@@ -1,0 +1,89 @@
+:root{
+    --bsr-primary:#42CA82;
+    --black:#000;
+    --bsr-a:#666;
+    --bsr-open-gray: #eee;
+    --bsr-white: #fff;
+    
+}
+
+footer { 
+    background-color:wheat;
+    height: fit-content;
+    padding: 1.5% 5%;
+    display: grid;
+    grid-template-columns: 435px auto auto auto;
+    transition: .2s;
+}
+
+.grid-item { 
+    text-align: center;
+    padding: 1rem;
+    
+}
+
+.footer-title { 
+    font-size: 25px;
+    font-family: 'Nunito' , sans-serif;
+    font-weight: bold;
+    transition: .2s;
+}
+
+.grid-item ul { 
+   list-style-type: none;
+   padding-inline-start: 0px;
+   font-family: 'Nunito' , sans-serif;
+   font-size: 20px;
+   transition: .2s;
+}
+
+.grid-item ul li a{
+    color: black;
+    transition: .2s;
+}
+
+.footer-logo{
+    width: 350px;
+    margin-top: -20px;
+    transition: .2s;
+}
+
+.footer-social-media { 
+    width: 50px;
+    height: 50px;
+    transition: .2s;
+}
+
+@media (max-width:1300px){
+    .grid-item>* { 
+        font-size: 20px;
+    }
+    .grid-item>*>* { 
+        font-size: 16px;
+    }
+    .footer-logo { 
+        width: 300px;
+    }
+    .footer-social-media { 
+        width: 40px;
+        height: 40px;
+    }
+}
+
+@media (max-width:1150px){
+    footer {
+         grid-template-columns: repeat(2, 10fr);
+         }
+    
+
+}
+@media (max-width:600px){
+    footer {
+         grid-template-columns: repeat(1, 1fr);
+         }
+
+}
+
+
+
+

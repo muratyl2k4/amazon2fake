@@ -1,0 +1,145 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@200;300;400;600;700&display=swap');
+
+:root{
+    
+    --bsr-primary:#42CA82;
+    --black:#000;
+    --bsr-a:#666;
+    --bsr-icon-bg: #eee;
+    --box-shadow:0 .5rem 1.5rem rgba(0, 0, 0, 0.1);
+    --white : #fff;
+}
+
+.shrink { 
+    padding: 0.4rem 12.5%;
+}
+header {
+    
+    
+    background-color: var(--white);
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    padding: 1rem 15%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 1000;
+    box-shadow: var(--box-shadow);
+    font-family: 'Nunito' , sans-serif;
+    transition: .2s linear;
+    
+}
+
+
+header .bsr-logo img{
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+    
+    width: 240px;
+    transition: .2s linear;
+}
+
+
+header .navbar a {
+    margin: 1px;
+    font-size: 1.3rem;
+    border-radius: .3rem;
+    padding: .3rem 1rem;
+    color: var(--bsr-a);
+    transition: .2s linear;
+    text-decoration: none;
+}
+
+header .navbar .active,
+header .navbar a:hover { 
+    color: white;
+    background: var(--bsr-primary);
+}
+
+header .icons{
+    width: 240px;    
+}
+header .icons a,
+header .icons i
+{
+    text-decoration: none;
+    cursor: pointer;
+    margin-left: 5px;
+    height: 50px;
+    line-height: 50px;
+    width: 50px;
+    text-align: center;
+    color: black;
+    border-radius: 50%;
+    font-size: 1.7rem;
+    background: var(--bsr-icon-bg);
+    transition: .2s linear;
+}
+header .icons a:hover,
+header .icons i:hover
+{
+    color: var(--white);
+    background: var(--bsr-primary);
+    transform: rotate(360deg);
+}
+
+header .icons #menu-bars {
+    display: none;
+}
+
+
+
+@media (max-width:1600px) { 
+    .shrink { 
+        padding: 0.4rem 7%;
+    }
+    header {
+        padding: 1rem 10%;
+    }
+}
+@media (max-width:1400px) { 
+    html { 
+        font-size: 80%;
+    }
+    header { 
+        padding: 1rem 10%;
+    }
+    header .bsr-logo img { 
+        width: 200px;
+    }
+
+    header .icons {
+        width: 200px;
+    }
+    header .icons a, 
+    header .icons i{
+        width: 40px;
+        height: 40px;
+        line-height: 40px;
+    }
+}
+
+@media (max-width:1150px)  {
+    header .icons #menu-bars { 
+        display: inline-block;
+    }
+    header .navbar {
+        transition: .2s linear;
+        position: absolute;
+        top: 100%; left: 0; right: 0;
+        background: var(--white);
+        border-top: .1rem solid rgba(0,0,0,.2);
+        padding: 1rem;
+        clip-path: polygon(0 0 , 100% 0 , 100% 0 , 0 0);
+    }
+    header .navbar.active {
+        clip-path: polygon(0 0 , 100% 0 , 100% 100%, 0% 100%);
+    }
+    header .navbar a{
+        width: 100%;
+        display:block;
+        padding: 1.5rem;
+        background: var(--bsr-icon-bg);
+        margin: 1rem;
+        font-size: 2rem;
+    }
+}

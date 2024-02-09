@@ -1,0 +1,36 @@
+{% extends 'base_html.html' %}
+{% load static %}
+{% block head %}
+<script src="https://kit.fontawesome.com/34fe106927.js" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="{% static 'css/navbar.css' %}">
+{% endblock %}
+
+
+{% block body %}
+<header>
+    <a href="#" class="bsr-logo"><img src="{% static 'images/bsr-logo.png'%}" alt=""></a>
+    
+    <nav class="navbar">
+        <a class="active" href="#">Anasayfa</a>
+        <a href="ss">Seller's Secret</a>
+        <a href="#">Forum</a>
+        <a href="#">Hakkımızda</a>
+        <a href="#">İletişim</a>
+    </nav>
+    
+    <div class="icons">
+        
+        <i href="#" class="fa-solid fa-bars" id="menu-bars"></i>
+        <i onclick="setDarkMode()" href="#" class="fa-solid fa-moon" id="darkmode"></i>   
+        <a href="#" class="fa-solid fa-user"></a>
+        {% if not request.user.is_authenticated %}
+        <a href="#" class="fa-solid fa-right-to-bracket"></a>
+        {% else %}
+        <a href="#"class="fa-solid fa-right-from-bracket"></a>
+        {% endif %}
+    </div>
+</header>
+    
+
+<script src="{% static 'js/navbar.js'%}"></script>
+{% endblock %}

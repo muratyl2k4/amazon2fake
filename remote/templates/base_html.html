@@ -1,0 +1,92 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+  {% block head %}
+
+    {% endblock %}
+  <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
+  <link rel="stylesheet" href="{% static 'css/footer.css' %}">
+  <script src="https://kit.fontawesome.com/34fe106927.js" crossorigin="anonymous"></script>
+  <link href='https://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet'>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="{% static 'img/bsr-logo.ico'%}">
+  <title>{% block title %}{% endblock %} - BSR Amazon</title>
+</head>
+<body>
+  <header class="animbase anim03" id="header">
+    <a href="#" class="bsr-logo"><img src="{% static 'images/bsr-logo.png'%}" alt=""></a>
+
+    <nav class="navbar">
+        <a class="active" href="#">Anasayfa</a>
+        <a href="ss">Seller's Secret</a>
+        <a href="#">Forum</a>
+        <a href="#">Hakkımızda</a>
+        <a href="#">İletişim</a>
+    </nav>
+
+    <div class="icons text-end">
+
+        <i href="#" class="fa-solid fa-bars" id="menu-bars"></i>
+        <i onclick="setDarkMode()" href="#" class="fa-solid fa-moon" id="darkmode"></i>
+        <a href="#" class="fa-solid fa-user"></a>
+        {% if not request.user.is_authenticated %}
+        <a href="#" class="fa-solid fa-right-to-bracket"></a>
+        {% else %}
+        <a href="#"class="fa-solid fa-right-from-bracket"></a>
+        {% endif %}
+    </div>
+</header>
+{% block body %}
+
+
+{% endblock %}
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 270"><path fill="wheat" fill-opacity="1" d="M0,192L34.3,176C68.6,160,137,128,206,133.3C274.3,139,343,181,411,192C480,203,549,181,617,186.7C685.7,192,754,224,823,213.3C891.4,203,960,149,1029,149.3C1097.1,149,1166,203,1234,229.3C1302.9,256,1371,256,1406,256L1440,256L1440,320L1405.7,320C1371.4,320,1303,320,1234,320C1165.7,320,1097,320,1029,320C960,320,891,320,823,320C754.3,320,686,320,617,320C548.6,320,480,320,411,320C342.9,320,274,320,206,320C137.1,320,69,320,34,320L0,320Z"></path></svg>
+
+<footer>
+    <div class="grid-item">
+            <ul>
+                <img class="footer-logo" src="{% static 'images/bsr-logo.png'%}" alt="">
+                <p class="footer-text">Tüm hakları bsramazon.com®’da saklıdır.</p>
+            </ul>
+        </div>
+
+    <div class="grid-item">
+            <h2 class="footer-title">Site içi bağlantılar</h2>
+            <ul>
+                <li><a href="#">Anasayfa</a></li>
+                <li><a href="#">Forum</a></li>
+                <li><a href="#">Hakımızda</a></li>
+                <li><a href="#">İletişim</a></li>
+            </ul>
+        </div>
+
+    <div class="grid-item">
+            <h2 class="footer-title">Seller‘s Secret</h2>
+            <ul>
+                <li><a href="#">Seller’s Secret Giriş</a></li>
+                <li><a href="#">Fiyatlandırma</a></li>
+            </ul>
+        </div>
+
+    <div class="grid-item">
+            <h2 class="footer-title">Sosyal Medya</h2>
+
+            <ul>
+                <img class="footer-social-media" src="{% static 'images/image-1.png'%}" alt="">
+                <img class="footer-social-media" src="{% static 'images/image-3.png'%}" alt="">
+                <img class="footer-social-media" src="{% static 'images/image-2.png'%}" alt="">
+
+            </ul>
+        </div>
+
+</footer>
+<script src="{% static 'js/navbar.js'%}"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js" integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+" crossorigin="anonymous"></script>
+</body>
+</html>

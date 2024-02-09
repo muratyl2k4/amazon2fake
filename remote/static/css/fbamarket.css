@@ -1,0 +1,53 @@
+
+html,
+body {
+    
+    /*background: url('/static/images/curve-grey.jpg') no-repeat center center fixed;*/
+    /*background-color: #edf1f7;*/
+    background-color:#f7f7f7;
+}
+
+.navbar-market {
+    max-width: 100%;
+    background-color: white;
+}
+
+.navbar-brand{
+    margin-left: 15%;
+}
+
+.navbar-brand img {
+    width: 35%;
+    height: auto;
+}
+
+a.nav-link {
+    margin-right: 5px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 18px;
+    color: rgb(0, 0, 0) !important;
+    font-weight: 700;
+    transition: color 0.5 ease;
+    -webkit-transition: color 0.5 ease;
+    -moz-transition: color 0.5 ease;
+    -o-transition: color 0.5 ease;
+}
+
+.nav-item.dropdown:hover .dropdown-menu {
+    display: block;
+}
+
+a.nav-link:hover  {
+    color: #ff0000 !important;
+    
+
+}
+
+.outer-container {
+    background: #ffffff;
+    width: auto;
+    margin-top: 100px;
+    margin-left: 50px ;
+    margin-right: 50px ;
+}
+
