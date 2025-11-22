@@ -1,268 +1,179 @@
+# README.md
 
-````markdown
-# Proje Dokümantasyonu
+# Proje: Remote ve Order Track Uygulaması
 
-Bu doküman, projenin **Remote** ve **Order_Track** app’lerini, veritabanı tablolarını, view’ları, Excel mapping’lerini, API akışlarını ve hesaplamaları kapsayan kapsamlı bir özetidir.
-
----
+Bu proje, Django ile geliştirilmiş iki temel uygulamayı içerir: **Remote App** ve **Order Track App**. Her iki uygulama da e-ticaret verilerini yönetmek ve takip etmek için tasarlanmıştır.
 
 ## İçindekiler
+
 1. [Remote App](#remote-app)
-   - Modeller ve Alanlar
-   - Excel İşleme (get_excels)
-   - Keepa ve Completed DB İşlemleri
-   - Matematiksel Hesaplamalar
-2. [Order_Track App](#order_track-app)
-   - Modeller ve Alanlar
-   - Views (kargotakip)
-   - Tracking API
-   - File Upload İşlemleri
-   - Courier Mapping
-3. [Veritabanı Router’ları](#veritabanı-routerları)
-4. [Excel Kolonları ve Mapping](#excel-kolonları-ve-mapping)
-5. [Matematiksel Hesaplamalar ve Zaman İşlemleri](#matematiksel-hesaplamalar-ve-zaman-işlemleri)
+
+   * [Amaç](#ama%C3%A7)
+   * [Veritabanı Alanları](#veritaban%C4%B1-alanlar%C4%B1)
+   * [View ve Fonksiyonlar](#view-ve-fonksiyonlar)
+   * [Matematiksel Hesaplamalar](#matematiksel-hesaplamalar)
+2. [Order Track App](#order-track-app)
+
+   * [Amaç](#ama%C3%A7-1)
+   * [Veritabanı Alanları](#veritaban%C4%B1-alanlar%C4%B1-1)
+   * [View ve Fonksiyonlar](#view-ve-fonksiyonlar-1)
+   * [Takip Mantığı](#takip-mant%C4%B1%C4%9F%C4%B1)
 
 ---
 
 ## Remote App
 
-### Modeller ve Alanlar
+### Amaç
 
-**Keepa DB:**
-| Field | Tip | Açıklama |
-|-------|-----|----------|
-| Asin | String | Ürün ASIN kodu |
-| Title | String | Ürün başlığı |
-| SalesRank | Integer | Anlık satış sıralaması |
-| SalesRank90 | Integer | 90 günlük ortalama satış sıralaması |
-| Drop_Count | Integer | Son 30 gündeki düşüş sayısı |
-| Buy_Price_FBA | Float | FBA fiyatı |
-| Buy_Price_FBM | Float | FBM fiyatı |
-| Buy_Price_BB | Float | Buy Box fiyatı |
-| Buy_Price_NC | Float | Normal fiyat |
-| Sale_Price_FBA | Float | FBA satış fiyatı |
-| Sale_Price_FBM | Float | FBM satış fiyatı |
-| Sale_Price_BB | Float | Buy Box satış fiyatı |
-| Sale_Price_NC | Float | Normal satış fiyatı |
-| Referral_Fee_Percentage | Float | Komisyon yüzdesi |
-| Pick_and_Pack_Fee | Float | FBA işlemi ücreti |
-| Is_Buybox_Fba | Boolean | BuyBox FBA mı? |
-| Fba_Seller_Count | Integer | FBA satıcı sayısı |
-| Amazon_Current | Float | Amazon fiyatı |
-| Dimension | Float | Paket hacmi (cm³) |
-| Weight | Float | Paket ağırlığı (g) |
-| Buybox_Lowest | Float | En düşük BuyBox fiyatı |
-| Variation_Asins | Integer | Varyasyon sayısı |
+Remote App, Keepa benzeri bir ürün takip ve fiyat analiz sistemi sağlar. Kullanıcılar ürünlerini yükler ve sistem, mevcut satış verilerini, fiyatları ve Amazon verilerini işler. Bu veriler:
 
-**Completed DB:**
-| Field | Tip | Açıklama |
-|-------|-----|----------|
-| User_id | Integer | Kullanıcı ID |
-| Title | String | Ürün başlığı |
-| Asin | String | Ürün ASIN kodu |
-| SalesRank | Integer | Anlık satış sıralaması |
-| SalesRank90 | Integer | 90 günlük ortalama satış sıralaması |
-| Is_Buybox_Fba | Boolean | BuyBox FBA mı? |
-| Fba_Seller_Count | Integer | FBA satıcı sayısı |
-| Amazon_Current | Float | Amazon fiyatı |
-| Buybox_Lowest | Float | En düşük BuyBox fiyatı |
-| Variation_Asins | Integer | Varyasyon sayısı |
-| Weight | Float | Ağırlık |
-| Profit_Percentage | Float | Kar yüzdesi |
-| Date | DateTime | Kaydedilme tarihi |
-| Is_Deleted_By_User | Boolean | Kullanıcı tarafından silinmiş mi |
-| Pool | Boolean | Havuzda mı? |
+* Ürün fiyat analizi
+* Satış performansı
+* Üçüncü parti satıcı fiyatları
+* Stok ve Buy Box durumu
 
-### Excel İşleme
+için kullanılır.
 
-Fonksiyon: `get_excels(com_file, target_file, cursor, keepa_db_query, completed_db_query, notCompleted_db_query, user_id)`
+### Veritabanı Alanları
 
-- **Amaç:** Com ve Target Excel dosyalarını okuyup, veritabanı tabloları ile eşleştirir.
-- **Adımlar:**
-  1. Excel dosyaları pandas ile okunur.
-  2. Kolonlar normalize edilir (`rename`).
-  3. Merge işlemi yapılır.
-  4. DB kayıtlarıyla karşılaştırılır, eksik veya değişmiş veriler güncellenir.
-  5. Keepa DB için yeni kayıtlar hazırlanır.
-- **Çıktılar:**
-  - `change_IDBU_true_df`
-  - `existing_products_df`
-  - `Asins_to_delete_from_notCompleted`
-  - `fill_empty_rows_df`
-  - `add_to_keepa_db_df`
-  - `new_completed_db_df`
+Veritabanı alanları `completed_db`, `notCompleted_db` ve `keepa_db` olarak ayrılır.
 
----
+#### completed_db (Tamamlanan ürünler)
 
-## Order_Track App
+| Alan Adı           | Açıklama                                        |
+| ------------------ | ----------------------------------------------- |
+| User_id            | Kullanıcı ID                                    |
+| Title              | Ürün başlığı                                    |
+| Asin               | Amazon ASIN                                     |
+| SalesRank          | Güncel satış sıralaması                         |
+| SalesRank90        | 90 günlük ortalama satış sıralaması             |
+| Is_Buybox_Fba      | Buy Box FBA mı?                                 |
+| Fba_Seller_Count   | FBA satıcı sayısı                               |
+| Amazon_Current     | Amazon fiyatı                                   |
+| Buybox_Lowest      | Buy Box lowest fiyatı                           |
+| Variation_Asins    | Ürün varyasyon ASIN sayısı                      |
+| Weight             | Ürün ağırlığı (lbs)                             |
+| Profit_Percentage  | Kar yüzdesi                                     |
+| Is_Deleted_By_User | Kullanıcı tarafından silindi mi?                |
+| Pool               | Pool durumu                                     |
+| Date               | Veri girildiği tarih                            |
+| Status             | Ürün durumu (success, warning, danger, primary) |
 
-### Modeller ve Alanlar
+#### notCompleted_db (Tamamlanmamış ürünler)
 
-**Order Model:**
-| Field | Tip | Açıklama |
-|-------|-----|----------|
-| AmazonOrderId | String | Amazon sipariş numarası |
-| Tracknumber | String | Birincil kargo takip numarası |
-| Tracknumber2 | String | İkincil kargo takip numarası |
-| Courier_Name | String | Kargo şirketi kodu |
-| Last_Status | String | Son durum |
-| Status | String | Bootstrap renk kodu (primary, warning, success, danger) |
+| Alan Adı      | Açıklama                                 |
+| ------------- | ---------------------------------------- |
+| Asin          | Amazon ASIN                              |
+| User_id       | Kullanıcı ID                             |
+| Diğer alanlar | Yukarıdaki completed_db alanlarının çoğu |
 
-### Views
+#### keepa_db (Keepa uyumlu veriler)
 
-**kargotakip view:**
-```python
-def kargotakip(request):
-    apiKey = "YOUR_API_KEY"
-    order_list = order_track(apiKey=apiKey)
-    if request.method == 'POST':
-        form = UploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            uploaded_file(request.FILES['file'] , Fransa)
-    else:
-        form = UploadFileForm()
-    data = {"info": order_list, "form": form}
-    return render(request, "kargotakip.html", data)
-````
+| Alan Adı                | Açıklama                    |
+| ----------------------- | --------------------------- |
+| Asin                    | Amazon ASIN                 |
+| Title                   | Ürün başlığı                |
+| SalesRank               | Satış sıralaması            |
+| SalesRank90             | 90 günlük ortalama sıralama |
+| Drop_Count              | Son 30 gün satış düşüşü     |
+| Buy_Price_FBA           | FBA alış fiyatı             |
+| Buy_Price_FBM           | FBM alış fiyatı             |
+| Buy_Price_BB            | Buy Box fiyatı              |
+| Buy_Price_NC            | Normal alış fiyatı          |
+| Sale_Price_NC           | Satış fiyatı                |
+| Sale_Price_BB           | Buy Box satış fiyatı        |
+| Sale_Price_FBM          | FBM satış fiyatı            |
+| Sale_Price_FBA          | FBA satış fiyatı            |
+| Buybox_Lowest           | Buy Box lowest              |
+| Is_Buybox_Fba           | Buy Box FBA mı?             |
+| Amazon_Current          | Amazon güncel fiyatı        |
+| Fba_Seller_Count        | FBA satıcı sayısı           |
+| Variation_Asins         | Varyasyon sayısı            |
+| Weight                  | Ürün ağırlığı               |
+| Referral_Fee_Percentage | Komisyon yüzdesi            |
+| Pick_and_Pack_Fee       | FBA pick&pack ücreti        |
 
-* Kullanıcı Excel yükleyebilir.
-* API üzerinden kargo durumları çekilir.
-* View template’e gönderilir.
+### View ve Fonksiyonlar
 
-### Tracking API
+* **get_excels**: Kullanıcıdan gelen Excel dosyasını alır, veritabanındaki ürünlerle birleştirir ve eksik verileri doldurur.
+* **check_to_notCompleted_db**: Tamamlanmamış ürünleri kontrol eder ve verileri tamamlar.
+* **dataSaver**: Keepa veritabanına yeni veriler ekler.
+* **get_or_create_completed**: completed_db'de olmayan ürünleri ekler.
 
-`trackApi.py`:
+### Matematiksel Hesaplamalar
 
-```python
-import urllib
-class TrackingApi:
-    baseApi = "https://api.trackingmore.com"
-    apiVersion = "v3"
-    sandbox = False
-
-    def __init__(self, api_key):
-        self.apiKey = api_key
-
-    def doRequest(self, api_path, post_data="", method="get"):
-        method = method.upper()
-        url = f"{self.baseApi}/{self.apiVersion}/trackings/{api_path}"
-        if self.sandbox:
-            url = f"{self.baseApi}/{self.apiVersion}/trackings/sandbox/{api_path}"
-        headers = {"Content-Type": "application/json", "Tracking-Api-Key": self.apiKey,
-                   'User-Agent': 'Mozilla/5.0'}
-        post_data = post_data.encode('UTF-8')
-        req = urllib.request.Request(url, post_data, headers=headers, method=method)
-        with urllib.request.urlopen(req) as response:
-            return response.read()
-```
-
-### File Upload İşlemleri
-
-`fileupload.py`:
-
-```python
-def uploaded_file(file , data):
-    pd_file = pd.read_excel(file)
-    pd_file = pd_file.where(pd.notnull(pd_file), None)
-    carrier = [x for x in pd_file['Carrier']]
-    trackingID = [x for x in pd_file['Tracking ID']]
-    fileAmazonOrderId = [x for x in pd_file['AmazonOrderId']]
-    dbAmazonOrderId = [x.get('SATICI_SIPARIS_NUMARASI') for x in data.objects.values()]
-    common_tracks = common_member(fileAmazonOrderId , dbAmazonOrderId)
-    for i in common_tracks:
-        index = pd_file.index[pd_file['AmazonOrderId'] == i].tolist()
-        try:
-            track = Order.objects.get(AmazonOrderId=fileAmazonOrderId[index[0]])
-            if track.Tracknumber == None: track.Tracknumber = trackingID[index[0]]
-            if track.Tracknumber2 == None and track.Tracknumber != trackingID[index[0]]: track.Tracknumber2 = trackingID[index[0]]
-            if track.Courier_Name == None or track.Courier_Name != courier_code(carrier[index[0]]): track.Courier_Name = courier_code(carrier[index[0]])
-            track.save()
-        except Order.DoesNotExist:
-            track = Order(AmazonOrderId=fileAmazonOrderId[index[0]], Tracknumber=trackingID[index[0]],
-                          Courier_Name=courier_code(carrier[index[0]]))
-            track.save()
-```
-
-### Courier Mapping
-
-`courier_code.py`:
-
-```python
-import pandas
-def courier_code(companyName):
-    csv = pandas.read_csv("order_track/c.csv")
-    courier_name = companyName.lower().replace('ı','i')
-    if courier_name == 'dpd': courier_name = 'wndirect'
-    csv["Courier Name\t"] = csv["Courier Name\t"].str.lower()
-    result = csv[csv["Courier Name\t"] == courier_name+ '\t'] if not csv[csv["Courier Name\t"] == courier_name+ '\t'].empty else csv[csv["Courier Name\t"].str.contains(courier_name.lower())]
-    return result['Carrier Code\t'].values[0].replace('\t','')
-```
+* Ürün ağırlığı: `Weight (lbs) = max(WEIGHT * 0.0022046226, DIMENSION * 0.0610237 / 135)`
+* Kar yüzdesi: `(Satış Fiyatı - Alış Fiyatı - FBA Ücretleri - Komisyon) / Satış Fiyatı * 100`
+* Boş varyasyon sayısı: `Variation_Asins.count(',') + 1`
 
 ---
 
-## Veritabanı Router’ları
+## Order Track App
 
-**sqLiteRouter**
+### Amaç
 
-* `auth`, `contenttypes`, `admin`, `sessions`, `main`, `order_track`, `accounts` için `default` DB kullanır.
+Order Track App, kargo takip ve sipariş durumu izleme sistemi sağlar. Kullanıcılar Excel dosyası yükler ve sistem:
 
-**mySQLRouter**
+* Amazon sipariş numarasına göre kargo bilgilerini alır
+* Takip numarası ve kargo firmasını veritabanına kaydeder
+* Teslimat durumunu günceller
+* Siparişin gecikme durumunu hesaplar
 
-* `remote` app için `mysql` DB kullanır.
+### Veritabanı Alanları
+
+`Order` modeli alanları:
+
+| Alan Adı      | Açıklama                           |
+| ------------- | ---------------------------------- |
+| AmazonOrderId | Amazon sipariş numarası            |
+| Tracknumber   | Ana takip numarası                 |
+| Tracknumber2  | Alternatif takip numarası          |
+| Courier_Name  | Kargo firması (sistem kodu)        |
+| Last_Status   | Son durum mesajı                   |
+| Status        | Arka planda gösterilen durum rengi |
+
+### View ve Fonksiyonlar
+
+* **kargotakip (view)**:
+
+  * Kullanıcı formu ile dosya yükler
+  * order_track fonksiyonunu çağırır
+  * Takip bilgilerini şablona gönderir
+
+* **order_track (fonksiyon)**:
+
+  * Tüm Order veritabanını okur
+  * Tracking API ile güncel durumu alır
+  * Son kontrol zamanına göre gecikmeyi hesaplar
+  * Teslim edilen ürünleri işaretler ve renk kodu atar
+
+* **TrackingApi**:
+
+  * TrackingMore API ile iletişim kurar
+  * POST ve GET işlemlerini yönetir
+
+* **courier_code**:
+
+  * Kargo firması ismini API uyumlu koda çevirir
+
+* **uploaded_file**:
+
+  * Excel dosyasındaki siparişleri veritabanına ekler veya günceller
+
+### Takip Mantığı
+
+1. Tracking numarası ve kargo firması alınır.
+2. TrackingMore API ile kargo durumu sorgulanır.
+3. Teslimat durumu ve son checkpoint zamanı ile geçen süre hesaplanır.
+4. `lastupdate` alanı dakika, saat veya gün cinsinden hesaplanır.
+5. Renk kodu atanır:
+
+   * `success` -> Teslim edildi
+   * `warning` -> 2 günden fazla gecikme
+   * `danger` -> 5 günden fazla gecikme
+   * `primary` -> Normal takip
+6. Veriler Order modeli ile kaydedilir ve şablona gönderilir.
 
 ---
 
-## Excel Kolonları ve Mapping
-
-| Com File                                 | Target File                 | DB Column               |
-| ---------------------------------------- | --------------------------- | ----------------------- |
-| Title                                    | Title                       | Title                   |
-| ASIN                                     | ASIN                        | Asin                    |
-| Buy Box: Current                         | Buy Box: Current            | Buy_Price_BB            |
-| New: Current                             | New: Current                | Buy_Price_NC            |
-| New, 3rd Party FBA: Current              | New, 3rd Party FBA: Current | Buy_Price_FBA           |
-| New, 3rd Party FBM: Current              | New, 3rd Party FBM: Current | Buy_Price_FBM           |
-| Sales Rank: Current                      | SalesRank                   | SalesRank               |
-| Sales Rank: Drops last 30 days           | Drop_Count                  | Drop_Count              |
-| Referral Fee %                           | Referral_Fee_Percentage     | Referral_Fee_Percentage |
-| FBA Fees:                                | Pick_and_Pack_Fee           | Pick_and_Pack_Fee       |
-| Buy Box: Is FBA                          | Is_Buybox_Fba               | Is_Buybox_Fba           |
-| Count of retrieved live offers: New, FBA | Fba_Seller_Count            | Fba_Seller_Count        |
-| Amazon: Current                          | Amazon_Current              | Amazon_Current          |
-| Package: Dimension (cm³)                 | Dimension                   | Dimension               |
-| Package: Weight (g)                      | Weight                      | Weight                  |
-| Sales Rank: 90 days avg.                 | SalesRank90                 | SalesRank90             |
-| Buy Box: Lowest                          | Buybox_Lowest               | Buybox_Lowest           |
-| Variation ASINs                          | Variation_Asins             | Variation_Asins         |
-
----
-
-## Matematiksel Hesaplamalar ve Zaman İşlemleri
-
-* **Weight & Dimension:**
-
-```python
-Weight = max(WEIGHT * 0.0022046226 , DIMENSION * 0.0610237 /135)
-```
-
-* **Geçen süre hesaplama:**
-
-```python
-passing_time = now - order_datetime_object
-if passing_time.total_seconds() <= 3600: lastupdate = f"{passing_time.total_seconds()/60} Dakika"
-elif passing_time.total_seconds() <= 86400: lastupdate = f"{passing_time.total_seconds()/3600} Saat"
-else: lastupdate = f"{passing_time.total_seconds()/86400} Gün"
-```
-
-* **Sipariş durumu renkleri:**
-
-  * Delivered → success
-  * 2+ gün → warning
-  * 5+ gün → danger
-  * Diğer → primary
-
-
-
-
-Bunu yapmamı ister misin?
-```
+Bu README, projenin hem Remote hem de Order Track uygulamalarının tüm alanlarını, matematiksel mantığını ve işlevlerini kapsamlı olarak içerir.
