@@ -26,7 +26,7 @@ Bu proje, Django ile geliştirilmiş iki temel uygulamayı içerir: **Remote App
 ### Amaç
 
 Remote App, Keepa benzeri bir ürün takip ve fiyat analiz sistemi sağlar. Kullanıcılar ürünlerini yükler ve sistem, mevcut satış verilerini, fiyatları ve Amazon verilerini işler. Bu veriler:
-
+(EKSIK VERILER AMZSRVR REPOSUNDAKI SCRIPTLER TARAFINDAN HESAPLANIP DOLDURULUYOR)
 * Ürün fiyat analizi
 * Satış performansı
 * Üçüncü parti satıcı fiyatları
