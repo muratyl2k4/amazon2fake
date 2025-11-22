@@ -1,4 +1,3 @@
-Tamam, işte projen için **tek bir README.md** dosyası, tüm app’ler, tablolar, field’lar, view’lar, Excel kolonları, API akışı ve matematiksel işlemler dahil olacak şekilde hazırlanmış hâli:
 
 ````markdown
 # Proje Dokümantasyonu
