@@ -176,4 +176,166 @@ Order Track App, kargo takip ve sipariş durumu izleme sistemi sağlar. Kullanı
 
 ---
 
-Bu README, projenin hem Remote hem de Order Track uygulamalarının tüm alanlarını, matematiksel mantığını ve işlevlerini kapsamlı olarak içerir.
+
+# Proje README
+
+## Proje Genel Tanımı
+Bu proje, **Amazon siparişlerini takip eden ve Keepa ile uyumlu verileri işleyen** bir Django uygulamasıdır. Proje iki ana uygulamadan oluşur:  
+
+1. **Remote App** → Keepa’den veya benzeri kaynaklardan alınan ürün ve fiyat verilerini işler.  
+2. **Order Track App** → Siparişleri takip eder, kargo durumlarını günceller ve kullanıcıya gösterir.  
+
+Proje çoklu veritabanı kullanır:  
+- `default` → Lokal veya ana veritabanı (auth, sessions, order_track vs.)  
+- `mysql` → Remote app verilerini saklamak için.  
+
+Router sınıflarıyla uygulamalar kendi veritabanına yönlendirilir:
+
+```python
+class sqLiteRouter:
+    route_app_labels = {"auth", "contenttypes" , "admin" , "sessions" , "main" , "order_track" , "accounts" }
+    def db_for_read(self, model, **hints):
+        if model._meta.app_label in self.route_app_labels:
+            return "default"
+        return None
+```
+
+```python
+class mySQLRouter:
+    route_app_labels = {"remote"}
+    def db_for_read(self, model, **hints):
+        if model._meta.app_label in self.route_app_labels:
+            return "mysql"
+        return None
+```
+
+## Remote App (Keepa Verileri)
+
+### Amaç
+Remote app, Keepa’dan veya benzeri kaynaklardan çekilen **ürün fiyat ve stok bilgilerini** işler. Kullanıcıların güncel veriye göre işlem yapabilmesini sağlar.
+
+### Temel Fonksiyon: `get_excels`
+`get_excels` fonksiyonu iki excel dosyasını (completed ve target) alır ve veritabanıyla eşleştirir:
+
+```python
+def get_excels(com_file , target_file , cursor ,keepa_db_query , completed_db_query , notCompleted_db_query , user_id):
+    com_pd_file = pd.read_excel(com_file)[['Title','ASIN','Buy Box: Current','New: Current','New, 3rd Party FBA: Current','New, 3rd Party FBM: Current']]
+    target_pd_file = pd.read_excel(target_file)[['ASIN','Sales Rank: Current','Sales Rank: Drops last 30 days','Buy Box: Current','New: Current','New, 3rd Party FBA: Current','New, 3rd Party FBM: Current','Referral Fee %','FBA Fees:','Buy Box: Is FBA','Count of retrieved live offers: New, FBA' , 'Amazon: Current' , 'Package: Dimension (cm³)' ,  'Package: Weight (g)' , 'Sales Rank: 90 days avg.' , 'Buy Box: Lowest' , 'Variation ASINs']]
+```
+
+#### İşlevler
+- Verilen Excel dosyalarını pandas ile okur ve gerekli kolonları seçer.  
+- Kolon isimlerini veritabanı ile uyumlu hâle getirir (`rename`).  
+- Merge işlemi ile **completed ve target verilerini birleştirir**.  
+- Boş değerleri doldurur ve Keepa veritabanına ekler (`add_to_keepa_db_df`).  
+- Kullanıcının veritabanında zaten bulunan ürünleri günceller veya yeni ekler.  
+
+#### Matematiksel Mantık
+- `Weight` ve `Dimension` kolonları üzerinden ürün ağırlığı ve hacimden **tahmini shipping hesaplamaları** yapılır:
+
+```python
+Weight = max(WEIGHT * 0.0022046226 , DIMENSION * 0.0610237 /135)
+```
+
+- Satış ve kâr oranları hesaplamaları, Keepa’daki fiyat verileri ile kullanıcı fiyatları arasındaki fark üzerinden yapılır.  
+
+## Order Track App
+
+### Amaç
+Order Track app, **Amazon siparişlerini ve kargo durumlarını takip eder**. Kullanıcıya son durum ve tahmini teslim zamanı gösterilir.
+
+### View: `kargotakip`
+
+```python
+def kargotakip(request):
+    apiKey = "w7xxm92y-c73w-k4ip-l6we-yhufw5dtw51g"
+    order_list = order_track(apiKey=apiKey)
+    if request.method == 'POST':
+        form = UploadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            uploaded_file(request.FILES['file'] , Fransa)
+    else:
+        form = UploadFileForm()
+    data = {        
+            "info" : order_list , 
+            'form' : form
+        }
+    return render(request , "kargotakip.html" , data)
+```
+
+- Kullanıcı yüklediği Excel dosyasını işler (`uploaded_file`)  
+- Tüm siparişler `order_track` fonksiyonu ile güncellenir  
+
+### Order Track Fonksiyonu: `order_track`
+
+```python
+def order_track(apiKey):
+    tracker = TrackingApi(apiKey)
+    tracker.sandbox = False
+    order_info_list = []
+    Orders = [x for x in Order.objects.values()]
+    ...
+    delivery_status = data.get('delivery_status').upper()
+    order = Order.objects.get(Tracknumber = tracknumber)
+    ...
+    order.save()
+```
+
+- Tüm siparişleri alır ve Tracking API üzerinden günceller.  
+- `delivery_status` alanına göre siparişin durumu (`Status`) güncellenir:  
+  - `"delivered"` → success  
+  - 2 gün geçti → warning  
+  - 5 gün geçti → danger  
+
+- Son checkpoint zamanı hesaplanır ve kullanıcıya `"lastupdate"` olarak gösterilir.  
+
+### Tracking API
+
+`TrackingApi` sınıfı, üçüncü parti kargo API’si ile haberleşir:
+
+```python
+class TrackingApi:
+    baseApi = "https://api.trackingmore.com"
+    apiVersion = "v3"
+    def doRequest(self, api_path, post_data="", method="get"):
+        ...
+        req = urllib.request.Request(url, post_data, headers=headers, method=method)
+        with urllib.request.urlopen(req) as response:
+            return response.read()
+```
+
+- `create` isteği ile takip numarası kaydedilir  
+- `get` isteği ile takip durumu alınır  
+
+### File Upload Fonksiyonu: `uploaded_file`
+
+```python
+def uploaded_file(file , data):
+    pd_file = pd.read_excel(file)
+    pd_file = pd_file.where(pd.notnull(pd_file), None)
+    carrier = [x for x in pd_file['Carrier']]
+    trackingID = [x for x in pd_file['Tracking ID']]
+    fileAmazonOrderId = [x for x in pd_file['AmazonOrderId']]
+    dbAmazonOrderId = [x.get('SATICI_SIPARIS_NUMARASI') for x in data.objects.values()]
+    common_tracks = common_member(fileAmazonOrderId , dbAmazonOrderId)
+    for i in common_tracks:
+        index = pd_file.index[pd_file['AmazonOrderId'] == i].tolist()
+        try: 
+            track = Order.objects.get(AmazonOrderId= fileAmazonOrderId[index[0]])
+            if track.Tracknumber == None: track.Tracknumber = trackingID[index[0]] if trackingID[index[0]] is not None else None
+            if track.Tracknumber2 == None and track.Tracknumber != trackingID[index[0]] : track.Tracknumber2 = trackingID[index[0]] if trackingID[index[0]] is not None else None
+            if track.Courier_Name == None or track.Courier_Name != courier_code(carrier[index[0]]): track.Courier_Name = courier_code(carrier[index[0]]) if carrier[index[0]] is not None else None              
+            track.save()            
+        except Order.DoesNotExist:
+            track = Order(
+            AmazonOrderId  = fileAmazonOrderId[index[0]] , 
+            Tracknumber = trackingID[index[0]] if trackingID[index[0]] is not None else None , 
+            Courier_Name = courier_code(carrier[index[0]]) if carrier[index[0]] is not None else None 
+            )
+            track.save()
+```
+
+- Excel dosyası yüklenir ve Amazon siparişleri ile eşleştirilir.  
+- Tracking numarası ve kargo bilgileri veritabanına kaydedilir veya güncellenir.  
+
+
