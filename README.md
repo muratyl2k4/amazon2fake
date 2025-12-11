@@ -1622,3 +1622,251 @@ Sorularınız için: [Email veya GitHub Issue]
 **Son Güncelleme:** 2025-12-11  
 **Versiyon:** 1.0.0  
 **Durum:** Production 🚀
+
+---
+
+## 📊 Pagination (Sayfalama) Sistemi
+
+Büyük veri setlerini kullanıcı dostu bir şekilde göstermek için Django Paginator kullanılıyor.
+
+### Teknik Detaylar
+
+**Sayfa Başına Öğe Sayısı:** 100 ürün
+
+**Uygulama:**
+```python
+# views.py:298-308
+paginator = Paginator(data['asins'], 100)  # 100 ürün/sayfa
+page_number = request.GET.get("page")
+if not page_number:
+    page_number = 1
+page_obj = paginator.get_page(page_number)
+
+data['asins'] = page_obj
+```
+
+**Kullanıcı Deneyimi:**
+- Her sayfada 100 ürün görüntülenir
+- URL parametresi: `?page=2`, `?page=3`, vb.
+- Filtreler sayfa numarasını korur
+- Toplam ürün sayısı gösterilir (`len_all_products`)
+
+**Örnek Senaryo:**
+```
+Kullanıcının 450 ürünü var:
+- Sayfa 1: Ürün 1-100
+- Sayfa 2: Ürün 101-200
+- Sayfa 3: Ürün 201-300
+- Sayfa 4: Ürün 301-400
+- Sayfa 5: Ürün 401-450
+```
+
+**Performans:**
+✅ Veritabanı sorgusu sayısını azaltır  
+✅ Sayfa yüklenme süresi hızlanır  
+✅ Tarayıcı bellek kullanımı optimize edilir  
+
+---
+
+## 💰 Kar Hesaplama Parametreleri
+
+Sistem, kapsamlı karlılık analizleri için aşağıdaki parametreleri kullanır:
+
+### 1️⃣ Sabit Parametreler
+
+#### Kargo Maliyeti (Shipping Cost)
+```python
+# MyMarketPlace.py:40
+self.shipping_cost = 3  # $3 sabit kargo maliyeti
+```
+**Açıklama:** ABD'den hedef pazara ortalama kargo maliyeti (FedEx/UPS tahmini)
+
+#### Minimum Kar Oranı (Minimum Ratio)
+```python
+# main_worker.py:295
+minimumRatio = 1.5  # Satış fiyatı/Maliyet oranı >= 1.5 olmalı
+```
+**Açıklama:** Ürün karlı kabul edilmesi için satış fiyatı, maliyetin en az 1.5 katı olmalı
+
+**Neden 1.5?**
+- %50 minimum kar marjı garanti eder
+- Beklenmedik gider ve riskleri karşılar
+- Endüstri standardı (FBA arbitraj için)
+
+#### İşlem Gideri
+```python
+# main_worker.py:210
+cost = (lowestBuyPrice + shipping_cost + 1) * curr_rate
+#                                        ^
+#                                        +1 USD ek işlem gideri
+```
+**Açıklama:** Paketleme, etiketleme ve diğer küçük giderler
+
+---
+
+### 2️⃣ Pazar Bazlı Parametreler
+
+#### KDV (VAT) Hesaplamaları
+
+**Avrupa Pazarları (DE, FR):**
+```python
+# main_worker.py:217-218
+if target_marketPlace == Marketplaces.DE or target_marketPlace == Marketplaces.FR:
+    vat_cost = lowestSellPrice / 6  # Satış fiyatının 1/6'sı KDV
+```
+**Açıklama:** AB'de KDV oranı yaklaşık %17-20, satış fiyatından düşülmeli
+
+**Örnek:**
+```
+Satış Fiyatı: 60€
+KDV Düşümü: 60 / 6 = 10€
+Net Gelir: 50€ (kar hesabında kullanılır)
+```
+
+#### Amazon Ücret Çarpanı (Fee Multiplier)
+
+**Vergi Dahil Pazarlar (UK, DE, FR):**
+```python
+# main_worker.py:220-221
+if target_marketPlace in [Marketplaces.DE, Marketplaces.FR, Marketplaces.UK]:
+    fee_mult = 1.2  # Amazon ücretlerine %20 vergi ekle
+```
+
+**Diğer Pazarlar (CA, JA, AU):**
+```python
+fee_mult = 1  # Vergi yok
+```
+
+**Açıklama:** İngiltere ve AB'de Amazon ücretlerine KDV uygulanır
+
+---
+
+### 3️⃣ Dinamik Parametreler
+
+#### Kur Çevrimi (Currency Rate)
+```python
+# MyMarketPlace.py:42-49
+def current_currency(self):
+    if self.curr_type != 'usd':
+        temp = json.loads(convert('usd', self.curr_type, 100000))
+        curr_rate = float(temp['amount']) / 100000
+        return curr_rate
+    else:
+        return 1
+```
+
+**Canlı Kur Çevirimi:**
+| Pazar | Para Birimi | Örnek Kur (2025) |
+|-------|-------------|-------------------|
+| CA    | CAD         | 1.35              |
+| UK    | GBP         | 0.79              |
+| JA    | JPY         | 149.50            |
+| AU    | AUD         | 1.52              |
+| DE    | EUR         | 0.92              |
+| FR    | EUR         | 0.92              |
+
+**Güncelleme:** Her controller döngüsünde güncel kur çekilir (google-currency API)
+
+---
+
+### 4️⃣ Kar Hesaplama Formülü (Final)
+
+#### Genel Formül:
+```python
+# İşlem sırası:
+# 1. Maliyet hesaplama
+cost = (buy_price_usd + shipping_cost_usd + 1) * currency_rate
+
+# 2. Oran kontrolü
+ratio = sale_price_local / cost
+if ratio < 1.5:
+    return "Karlı değil"  # İşlem durdurulur
+
+# 3. Amazon ücretlerini al (SP-API)
+total_fee = get_amazon_fees(asin, sale_price)
+
+# 4. Vergi hesaplama (pazar bazlı)
+if market in ['DE', 'FR']:
+    vat_deduction = sale_price / 6
+    fee_multiplier = 1.2
+elif market == 'UK':
+    vat_deduction = 0
+    fee_multiplier = 1.2
+else:  # CA, JA, AU
+    vat_deduction = 0
+    fee_multiplier = 1.0
+
+# 5. Net kar
+profit = sale_price - vat_deduction - (total_fee * fee_multiplier) - cost
+
+# 6. Kar yüzdesi
+profit_percentage = profit / cost
+```
+
+#### Örnek Hesaplama (UK Pazarı):
+```
+Giriş Verileri:
+- Alış Fiyatı (US): $25.00
+- Satış Fiyatı (UK): £35.00
+- Kur (USD → GBP): 0.79
+- Kargo: $3
+- Amazon Fee: £5.25
+
+Hesaplama:
+1. Maliyet = ($25 + $3 + $1) * 0.79 = £22.91
+2. Oran = £35.00 / £22.91 = 1.53 ✓ (>= 1.5)
+3. Amazon Fee (vergi dahil) = £5.25 * 1.2 = £6.30
+4. KDV Düşümü = 0 (UK'de satış fiyatından düşmeyiz)
+5. Kar = £35.00 - 0 - £6.30 - £22.91 = £5.79
+6. Kar Yüzdesi = £5.79 / £22.91 = %25.3
+```
+
+---
+
+### 5️⃣ Performans Optimizasyonları
+
+#### Threading Parametreleri
+```python
+# main_worker.py:308
+n = 9  # Maksimum eş zamanlı thread sayısı
+
+# main_worker.py:317-318
+if k % 10 == 0:
+    time.sleep(5)  # Her 10 iterasyonda 5 saniye bekle (rate limiting)
+```
+
+**Açıklama:**
+- Amazon SP-API rate limiting'i aşmamak için
+- 9 thread optimal hız/stabilite dengesi sağlar
+
+#### Worker Döngü Süresi
+```python
+# main_controller.py:279
+time.sleep(200)  # 200 saniye (3.3 dakika) bekle
+```
+
+**Açıklama:** Her döngüde ~100-200 ASIN işlenebilir, sürekli API bombardımanını önler
+
+---
+
+### 6️⃣ Hata Kodları
+
+Bazı durumlar için negatif değerler kullanılır:
+
+```python
+# main_worker.py:17-26
+exception_codes = {
+    'PackageDimensions': -8888,   # Ağırlık/boyut verisi yok
+    'Low_Ratio': -777777,         # Ratio < 1.5 (karlı değil)
+    'Unauthorized': -666666,      # API credentials hatalı
+    'InvalidInput': -555555,      # ASIN geçersiz
+    'feesEstimate': -444444,      # Ücret hesaplanamadı
+    'BuyboxPrices': -333333,      # Buybox fiyatı yok
+    'LowestPrices': -222222,      # En düşük fiyat yok (stokta değil)
+    'noCredential': -111111       # API key eksik
+}
+```
+
+**Kullanım:** Bu kodlar `Buy_Price`, `Sale_Price` veya `Profit` alanlarında görülebilir
+
+
