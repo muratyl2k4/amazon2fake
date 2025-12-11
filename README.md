@@ -106,6 +106,170 @@ Proje **iki ana bileşenden** oluşur:
 - **Admin Paneli:** Süper kullanıcılar tüm verilere erişebilir
 
 ### 📥 Veri Girişi
+
+### 🔗 Keepa Entegrasyonu (Endüstri Uyumluluğu)
+
+**Neden Keepa?**
+
+Keepa, Amazon arbitraj dünyasında **endüstri standardı** bir araçtır. Bu sistem, Keepa raporlarını destekleyerek popüler arbitraj yazılımlarıyla tam uyumlu çalışır.
+
+#### Uyumlu Yazılımlar:
+- 📊 **Tactical Arbitrage:** En popüler arbitraj aracı
+- 🔍 **AZInsight:** Amazon ürün araştırma eklentisi
+- 📈 **SellerAmp SAS:** Hızlı kar hesaplama aracı
+- 💎 **InventoryLab:** FBA envanter yönetimi
+- 🎯 **Keepa Browser Extension:** Fiyat geçmişi ve veri export
+
+**Avantajları:**
+✅ **Toplu İşlem:** Tek seferde yüzlerce ASIN işlenebilir  
+✅ **Zengin Veri:** Fiyat geçmişi, sales rank, drop count otomatik gelir  
+✅ **Maliyet Tasarrufu:** Keepa API kullanımı, Amazon SP-API'dan daha ucuz  
+✅ **Workflow Entegrasyonu:** Tactical Arbitrage → Keepa Export → Bu Sistem  
+✅ **Hız:** Excel verisi lokal işlenir, API bekleme süresi yok  
+
+#### Desteklenen Keepa Rapor Formatı
+
+**İki Excel Dosyası Gereklidir:**
+
+**1. COM Excel (ABD Pazarı - Alış Fiyatları)**
+
+Gerekli sütunlar:
+```
+- Title
+- ASIN
+- Buy Box: Current
+- New: Current
+- New, 3rd Party FBA: Current
+- New, 3rd Party FBM: Current
+```
+
+**2. TARGET Excel (Hedef Pazar - Satış Fiyatları)**
+
+Gerekli sütunlar:
+```
+- ASIN
+- Sales Rank: Current
+- Sales Rank: Drops last 30 days
+- Sales Rank: 90 days avg.
+- Buy Box: Current
+- Buy Box: Lowest
+- New: Current
+- New, 3rd Party FBA: Current
+- New, 3rd Party FBM: Current
+- Referral Fee %
+- FBA Fees:
+- Buy Box: Is FBA (yes/no)
+- Count of retrieved live offers: New, FBA
+- Amazon: Current
+- Package: Dimension (cm³)
+- Package: Weight (g)
+- Variation ASINs
+```
+
+#### Keepa'dan Veri Export Adımları
+
+**Tactical Arbitrage Kullanıcıları İçin:**
+```
+1. Tactical Arbitrage'da tarama yap
+2. Sonuçları filtrele (ROI > %30, Sales Rank < 50,000)
+3. "Export to Keepa" butonuna tıkla
+4. Keepa'da:
+   ├─ US marketplace için rapor al → com_asin.xlsx
+   └─ Hedef marketplace için rapor al → target_asin.xlsx
+5. Bu sisteme her iki Excel'i yükle
+```
+
+**Keepa Browser Extension Kullanıcıları İçin:**
+```
+1. Amazon'da ürün listesini aç
+2. Keepa eklentisini aç
+3. "Data" sekmesine git
+4. "Export to Excel" seç
+5. Gerekli kolonları işaretle (yukarıdaki liste)
+6. İndir ve sisteme yükle
+```
+
+#### Sistem Nasıl İşler?
+
+**Keepa Excel Yükleme Akışı:**
+```mermaid
+graph TD
+    A[Kullanıcı 2 Excel Yükler] --> B[Django: fileupload.py]
+    B --> C[Excel Merge - ASIN Bazlı]
+    C --> D{ASIN Daha Önce İşlenmiş mi?}
+    D -->|Evet ve Güncel| E[Mevcut Veriyi Kullan]
+    D -->|Evet ama Eski| F[remote_keepaexcel Tablosuna Ekle]
+    D -->|Hayır| F
+    F --> G[Worker: keepaWorker.py]
+    G --> H[En Düşük Fiyatları Bul]
+    H --> I[Kar Hesapla]
+    I --> J[remote_completed Tablosuna Yaz]
+    J --> K[Kullanıcı Sonuçları Görür]
+    E --> K
+```
+
+**Kod İçinde Sütun Mapping:**
+```python
+# fileupload.py:25-46
+columns_to_rename_com = {
+    'New, 3rd Party FBM: Current': 'Buy_Price_FBM',
+    'New, 3rd Party FBA: Current': 'Buy_Price_FBA',
+    'New: Current': 'Buy_Price_NC',
+    'Buy Box: Current': 'Buy_Price_BB'
+}
+
+columns_to_rename_target = {
+    'Sales Rank: Current': 'SalesRank',
+    'Sales Rank: Drops last 30 days': 'Drop_Count',
+    'New, 3rd Party FBM: Current': 'Sale_Price_FBM',
+    'New, 3rd Party FBA: Current': 'Sale_Price_FBA',
+    'New: Current': 'Sale_Price_NC',
+    'Buy Box: Current': 'Sale_Price_BB',
+    'Referral Fee %': 'Referral_Fee_Percentage',
+    'FBA Fees:': 'Pick_and_Pack_Fee',
+    'Buy Box: Is FBA': 'Is_Buybox_Fba',
+    'Count of retrieved live offers: New, FBA': 'Fba_Seller_Count',
+    'Amazon: Current': 'Amazon_Current',
+    'Package: Dimension (cm³)': 'Dimension',
+    'Package: Weight (g)': 'Weight',
+    'Sales Rank: 90 days avg.': 'SalesRank90',
+    'Buy Box: Lowest': 'Buybox_Lowest',
+    'Variation ASINs': 'Variation_Asins'
+}
+```
+
+#### Keepa vs Manuel ASIN Farkı
+
+| Özellik | Keepa Excel | Manuel ASIN |
+|---------|-------------|-------------|
+| **Hız** | ⚡ Çok Hızlı (API yok) | 🐌 Yavaş (SP-API bekler) |
+| **Veri Kaynağı** | 📊 Keepa veritabanı | 🔴 Canlı Amazon API |
+| **Maliyet** | 💰 Ucuz (Keepa aboneliği) | 💸 Pahalı (SP-API quota) |
+| **Tazelik** | 📅 Keepa güncelleme sıklığı | ⚡ Gerçek zamanlı |
+| **Toplu İşlem** | ✅ 500+ ASIN tek seferde | ❌ Tek tek işlenir |
+| **Amazon Ücretleri** | 📈 Keepa tahmini | 🎯 SP-API gerçek ücret |
+| **Kullanım Senaryosu** | İlk tarama | Seçilmiş ürün kontrolü |
+
+#### Önemli Notlar
+
+> [!WARNING]
+> **Excel Formatı Kritik!**
+> Keepa'nın sütun isimleri zaman zaman değişebilir. Eğer "Excel Hatalı" hatası alırsanız:
+> 1. `fileupload.py:22-46` satırlarındaki sütun isimlerini kontrol edin
+> 2. Keepa'nın güncel rapor formatıyla karşılaştırın
+> 3. Gerekirse `columns_to_rename_*` dictionary'lerini güncelleyin
+
+> [!TIP]
+> **En İyi Workflow:**
+> 1. Tactical Arbitrage ile geniş tarama yap (1000+ ASIN)
+> 2. Keepa Excel export al
+> 3. Bu sisteme yükle (hızlı kar hesaplama)
+> 4. Karlı olanları Pool'a ekle
+> 5. Pool'dakileri manuel ASIN olarak tekrar kontrol et (güncel fiyat)
+> 6. Nihai kararı ver ve satın al
+
+---
+
 #### 1. Manuel ASIN Girişi
 ```python
 # views.py: fbaMarketPage -> POST: 'asin_text_upload'
@@ -127,6 +291,198 @@ Proje **iki ana bileşenden** oluşur:
 #   - KeepaExcel tablosuna yazar
 #   - Worker işleme almak üzere bekler
 ```
+
+### 🧠 Akıllı Veri Önbellekleme (1 Günlük Tazelik Kontrolü)
+
+**Amaç:** Gereksiz API çağrılarını önlemek ve maliyeti düşürmek
+
+#### Nasıl Çalışır?
+
+Kullanıcı manuel ASIN girdiğinde, sistem **4 farklı senaryo** uyguluyor:
+
+##### Senaryo 1: ASIN İlk Kez Ekleniyor
+```python
+# Kullanıcı: B07XYZ1234 ASIN'ini giriyor (ilk kez)
+# Sistem:
+#   1. remote_completeduk'da bu ASIN var mı? → YOK
+#   2. remote_keepaexceluk'da var mı? → YOK
+#   3. Aksiyon:
+#      ├─ remote_completeduk'a boş kayıt ekle (User + Asin)
+#      └─ remote_notcompleteduk'a ekle
+# Sonuç: Worker API'ya gidecek, tüm verileri çekecek
+```
+
+##### Senaryo 2: ASIN Daha Önce İşlenmiş VE Güncel (1 Günden Yeni)
+```python
+# Kullanıcı: B07XYZ1234 ASIN'ini tekrar giriyor
+# Sistem:
+#   1. remote_completeduk'da bu ASIN var mı? → VAR
+#   2. Profit_Percentage NULL mu? → DOLU (işlenmiş)
+#   3. Date alanı ne zaman? → 2025-12-10 (1 gün önce)
+#   4. Bugün - Date = 1 gün → GÜNCEL!
+#   5. Aksiyon:
+#      ├─ Kullanıcının bu ASIN'i daha önce eklemiş mi kontrol et
+#      │  ├─ Eklemiş VE Is_Deleted_By_User=True ise:
+#      │  │  └─ Is_Deleted_By_User=False yap (geri getir)
+#      │  └─ Eklememişse:
+#      │     └─ Mevcut kaydı KOPYALA (yeni User ile)
+#      └─ NOT: NotCompleted'e EKLEME (API'ya gitmesin)
+# Sonuç: Mevcut veriyi kullan, API maliyeti = 0
+```
+
+**Kod Detayı (views.py:193-219):**
+```python
+try:
+    # ASIN daha önce işlenmiş mi kontrol et
+    check = completedDatas.objects.filter(~Q(Profit_Percentage=None), Asin=asin)
+    
+    # Tarih farkını hesapla
+    check2nd = datetime.now().date() - check[0].Date
+    
+    if (check2nd).days >= 1:
+        # 1 GÜNDEN ESKİ → Yeniden işle
+        try:
+            product = notCompletedDatas.objects.get(Asin=asin)
+        except:
+            notcompleted = notCompletedDatas(Asin=asin)
+            notcompleted.save()
+        finally:
+            product = completedDatas(User=request.user, Asin=asin)
+            product.save()
+    else:
+        # 1 GÜNDEN YENİ → Mevcut veriyi kullan
+        try:
+            existing_user_product = check.filter(User=request.user)
+            existing_user_product = existing_user_product[0]
+            if existing_user_product.Is_Deleted_By_User == True:
+                existing_user_product.Is_Deleted_By_User = False
+                existing_user_product.save()
+        except:
+            # Kullanıcının kaydı yoksa kopyala
+            new = check[0]
+            new._state.adding = True  # Django'ya "yeni kayıt" olduğunu söyle
+            new.pk = None              # Primary key'i sıfırla
+            new.User = request.user    # Yeni kullanıcı ata
+            new.Is_Deleted_By_User = False
+            new.save(using='mysql')
+except:
+    # ASIN hiç işlenmemiş → Normal akış
+    ...
+```
+
+##### Senaryo 3: ASIN İşlenmiş AMA Eski (1 Günden Fazla)
+```python
+# Kullanıcı: B07XYZ1234 ASIN'ini giriyor
+# Sistem:
+#   1. remote_completeduk'da var mı? → VAR
+#   2. Date = 2025-12-05 (6 gün önce)
+#   3. Bugün - Date = 6 gün > 1 gün → ESKİ!
+#   4. Aksiyon:
+#      ├─ Kullanıcı için YENİ boş kayıt oluştur
+#      ├─ remote_notcompleteduk'a ekle
+#      └─ Kullanıcının eski kaydı Is_Deleted_By_User=False yap
+# Sonuç: Worker API'ya gidecek, güncel fiyatları çekecek
+```
+
+**Neden 1 Gün Süresi?**
+- Amazon fiyatları hızla değişir (günde birkaç kez)
+- 1 günden eski veri güvenilmez (fiyat değişmiş olabilir)
+- 1 günden yeni veri makul bir tazelik garantisi verir
+
+##### Senaryo 4: ASIN Keepa'da Var AMA Completed'de Yok
+```python
+# Kullanıcı: B07XYZ1234 ASIN'ini giriyor
+# Sistem:
+#   1. remote_completeduk'da yok
+#   2. remote_keepaexceluk'da VAR (Excel yüklenmişti)
+#   3. Aksiyon:
+#      ├─ Keepa verisini al (Title, SalesRank, FBA count, vb.)
+#      ├─ remote_completeduk'a DOLU kayıt ekle (Keepa verileriyle)
+#      └─ NOT: NotCompleted'e EKLEME (Keepa verisi yeterli)
+# Sonuç: Keepa verisini kullan, SP-API'ya gitmeye gerek yok
+```
+
+**Kod Detayı (views.py:221-234):**
+```python
+try:
+    # Keepa'da var mı kontrol et
+    product_keepa = keepaExcelDatas.objects.get(Asin=asin)
+    
+    # Keepa verileriyle direkt Completed'e kaydet
+    product = completedDatas(
+        User=request.user,
+        Title=product_keepa.Title,
+        Asin=asin,
+        SalesRank=product_keepa.SalesRank,
+        SalesRank90=product_keepa.SalesRank90,
+        Is_Buybox_Fba=product_keepa.Is_Buybox_Fba,
+        Buybox_Lowest=product_keepa.Buybox_Lowest,
+        Variation_Asins=product_keepa.Variation_Asins,
+        Fba_Seller_Count=product_keepa.Fba_Seller_Count,
+        Weight=product_keepa.Weight,
+        Amazon_Current=product_keepa.Amazon_Current
+    )
+    product.save()
+except:
+    # Keepa'da da yok → Normal akış (NotCompleted'e ekle)
+    ...
+```
+
+#### Maliyet Tasarrufu Hesabı
+
+**Örnek:**
+- 100 kullanıcı var
+- Her kullanıcı günde ortalama 20 ASIN ekliyor
+- %70'i daha önce başka kullanıcı tarafından işlenmiş
+
+**Akıllı önbellekleme OLMADAN:**
+```
+Günlük API çağrısı = 100 kullanıcı × 20 ASIN × 3 API endpoint = 6,000 çağrı/gün
+```
+
+**Akıllı önbellekleme İLE:**
+```
+%70 cache hit (önbellekten) → 0 API çağrısı
+%30 cache miss (yeni/eski) → 100 × 20 × 0.30 × 3 = 1,800 çağrı/gün
+
+Tasarruf = 6,000 - 1,800 = 4,200 çağrı/gün (%70 azalma!)
+```
+
+#### Keepa Excel İçin Benzer Mantık
+
+`fileupload.py` dosyasında da aynı 1 günlük kontrol var:
+
+```python
+# fileupload.py:125-132
+try:
+    check = completed_db.objects.filter(~Q(Profit_Percentage=None), Asin=ASIN)
+    check2nd = datetime.now().date() - check[0].Date
+    
+    if (check2nd).days >= 1:
+        # ESKİ → NotCompleted'e ekle, Worker işlesin
+        check_to_notCompleted_db(...)
+    else:
+        # YENİ → Kullanıcı için kopyala
+        ...
+except:
+    # YOK → Normal işle
+    check_to_notCompleted_db(...)
+```
+
+#### Özellik Avantajları
+
+✅ **Maliyet Düşürme:** Amazon SP-API çağrılarını %70'e kadar azaltır  
+✅ **Hız:** Kullanıcı anında sonuç görür (API beklemesi yok)  
+✅ **Rate Limiting Koruması:** API limitlerini aşma riskini düşürür  
+✅ **Veri Tazeliği:** 1 günden yeni veriler güvenilir  
+✅ **Kullanıcı Deneyimi:** Popüler ürünler hızlıca yüklenir  
+
+#### Dikkat Edilmesi Gerekenler
+
+⚠️ **Güncel Olmayan Veriler:** Eğer fiyatlar çok hızlı değişiyorsa, elle yenilemek gerekebilir  
+⚠️ **Silinmiş Ürünler:** Kullanıcı silip tekrar eklerse, aynı eski veri gelir  
+⚠️ **Pool Kullanımı:** Pool'daki ürünleri güncellemek için silip tekrar eklemek gerekir  
+
 
 ### 🔍 Filtreleme ve Sıralama
 Kullanıcılar şu kriterlere göre ürünleri filtreleyebilir:
