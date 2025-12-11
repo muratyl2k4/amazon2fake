@@ -513,6 +513,256 @@ Sıralama seçenekleri:
 - Türkçe başlıklar içerir
 - Tüm önemli alanları içerir (Kar, Ratio, SalesRank, vb.)
 
+### 🗄️ Dual Database Architecture (Database Routers)
+
+**Kritik Mimari Özellik:** Sistem, Django'nun **iki farklı veritabanı** kullanmasını sağlayan özel router sistemi ile çalışır.
+
+#### Mimari Diyagram:
+```
+┌────────────────────────────────────┐
+│       Django Uygulamaları          │
+└──────┬────────────────────┬────────┘
+       │                    │
+       ▼                    ▼
+┌──────────────┐      ┌────────────────┐
+│  SQLite      │      │  MySQL (Cloud) │
+│  (Lokal)     │      │(PythonAnywhere)│
+└──────┬───────┘      └──────┬─────────┘
+       │                     │
+       ▼                     ▼
+  • auth            • remote (ASIN verileri)
+  • sessions        • Completed
+  • admin           • NotCompleted
+  • accounts        • KeepaExcel
+  • order_track
+```
+
+#### İki Router Sistemi:
+
+**1. sqLiteRouter (`routers/db_routers.py`):**
+```python
+route_app_labels = {
+    "auth", "contenttypes", "admin", 
+    "sessions", "main", "order_track", "accounts"
+}
+
+# Bu uygulamalardan gelen tüm modeller → SQLite (default)
+```
+
+**2. mySQLRouter (`routers/db_routers.py`):**
+```python
+route_app_labels = {"remote"}
+
+# remote uygulamasından gelen tüm modeller → MySQL (cloud)
+```
+
+**Aktivasyon:**
+```python
+# settings.py:140
+DATABASE_ROUTERS = [
+    "routers.db_routers.sqLiteRouter", 
+    "routers.db_routers.mySQLRouter"
+]
+```
+
+#### Teknik Avantajlar:
+
+✅ **Performans:**
+- Auth işlemleri lokal SQLite'dan **instant** yanıt alır
+- Kullanıcı login/logout gecikme yok
+
+✅ **Ölçeklenebilirlik:**
+- Worker (amzsrvr) sadece MySQL'e bağlanır
+- Kullanıcı verileri lokal kalır (privacy)
+
+✅ **Cache Efficiency:**
+- ASIN verileri tüm kullanıcılar arasında paylaşılır
+- %70 cache hit oranı (1 günlük tazelik kontrolü sayesinde)
+
+✅ **Veri Güvenliği:**
+- Hassas kullanıcı bilgileri (şifreler) lokal SQLite'da
+- İş verileri güvenli cloud MySQL'de
+
+✅ **Deployment Flexibility:**
+- SQLite: Geliştirme/test ortamında hızlı
+- MySQL: Production'da güvenilir ve paylaşımlı
+
+#### Router Mantığı:
+
+**Read Routing:**
+```python
+def db_for_read(self, model, **hints):
+    if model._meta.app_label in self.route_app_labels:
+        return "mysql"  # veya "default" (SQLite)
+    return None
+```
+
+**Write Routing:**
+```python
+def db_for_write(self, model, **hints):
+    if model._meta.app_label in self.route_app_labels:
+        return "mysql"  # veya "default" (SQLite)
+    return None
+```
+
+**Migration Routing:**
+```python
+def allow_migrate(self, db, app_label, model_name=None, **hints):
+    if app_label in self.route_app_labels:
+        return db == "mysql"  # veya db == "default"
+    return None
+```
+
+#### Örnek Senaryo:
+```python
+# Kullanıcı login oluyor
+User.objects.get(username='john')  
+# → SQLite'dan okunur (hızlı)
+
+# Yeni ASIN ekleniyor
+CompletedUK.objects.create(User=user, Asin='B07XYZ')
+# → MySQL'e yazılır (paylaşımlı)
+
+# Worker ASIN verilerini okuyor
+NotCompletedUK.objects.all()
+# → MySQL'den okunur (amzsrvr MySQL'e bağlı)
+```
+
+#### Portfolyo için Önemli:
+Bu pattern **microservice architecture** benzeri bir yaklaşımdır:
+- **Separation of Concerns**: Auth ve iş mantığı ayrı
+- **Distributed Database**: Hybrid lokal/cloud mimari
+- **Scalability**: Worker ve web app bağımsız scale edilebilir
+
+
+### 📦 Kargo Takip Modulu (order_track)
+
+**Basit ama kullanışlı kargo takip sistemi.**
+
+**Amaç:** Satılan ürünlerin kargolarını harici API ile takip etme
+
+**Dosya:** `order_track/views.py`
+
+**URL:** `/order_track/kargotakip`
+
+**İşleyis:**
+```python
+# order_track/views.py
+def kargotakip(request):
+    if request.method == 'POST':
+        # Excel dosyası yüklenir
+        file = request.FILES['file']
+        apiKey = 'YOUR_API_KEY'
+        
+        # Harici API'ye gönderilir
+        order_list = order_track(apiKey=apiKey)
+        
+        # Sonuçlar template'e aktarılır
+        return render(request, 'kargotakip.html', {'orders': order_list})
+```
+
+**Özellikler:**
+- ✅ Excel dosyası yükleme
+- ✅ Harici kargo API entegrasyonu
+- ✅ Toplu kargo durumu sorgulama
+
+**Kullanım Alanı:**
+- FBA gönderimlerinin takibi
+- Müşteri karşısında kargo numarası paylaşımı
+
+### 🎭 Custom Template Tags
+
+**Django template'lerde özel yardımcı fonksiyonlar.**
+
+**Dosya:** `remote/templatetags/my_tags.py`
+
+#### `param_replace` Template Tag
+
+**Amaç:** Pagination URL'lerinde filtreleri korumak
+
+**Kullanım:**
+```django
+{% load my_tags %}
+
+<!-- Sayfa 3'e geçerken mevcut filtreleri koru -->
+<a href="?{% param_replace page=3 %}">
+  Sayfa 3
+</a>
+```
+
+**Örnek:**
+```
+Mevcut URL: /fba/uk/?profit_percentage_min=30&page=1
+
+Template:
+<a href="?{% param_replace page=2 %}">Next</a>
+
+Sonuç URL: /fba/uk/?profit_percentage_min=30&page=2
+                                 ^
+                         Filtre korundu!
+```
+
+**Teknik Detay:**
+```python
+@register.simple_tag(takes_context=True)
+def param_replace(context, **kwargs):
+    d = context['request'].GET.copy()  # Mevcut parametreleri kopyala
+    for k, v in kwargs.items():
+        d[k] = v  # Yeni parametreyi ekle/güncelle
+    for k in [k for k, v in d.items() if not v]:
+        del d[k]  # Boş parametreleri temizle
+    return d.urlencode()  # URL encode et
+```
+
+**Neden Önemli:**
+- Kullanıcı deneyimi: Filtreler sayfa değiştirirken kaybolmaz
+- SEO dostu URL'ler
+- Django Paginator ile uyumlu
+
+### ⚙️ Django Admin Panel
+
+**Tüm veritabanı modellerine yönetim arayüzü.**
+
+**Dosya:** `remote/admin.py`
+
+**Kayıtlı Modeller:**
+```python
+# Her pazar için:
+admin.site.register(CompletedUK)
+admin.site.register(CompletedCA)
+admin.site.register(CompletedAU)
+admin.site.register(CompletedJA)
+admin.site.register(CompletedFR)
+admin.site.register(CompletedDE)
+
+admin.site.register(NotCompletedUK)
+admin.site.register(NotCompletedCA)
+# ... diğer pazarlar
+
+admin.site.register(KeepaExcelUK)
+admin.site.register(KeepaExcelCA)
+# ... diğer pazarlar
+
+admin.site.register(excelData)  # Yüklenen Excel dosyaları
+```
+
+**Erişim:** `/admin/` (superuser gerekli)
+
+**Özellikler:**
+- ✅ Tüm Completed tablolarını görüntüleme/düzenleme
+- ✅ NotCompleted kuyruk yönetimi
+- ✅ KeepaExcel verilerini manuel kontrol
+- ✅ excelData yükleme geçmişi
+- ✅ Toplu silme/düzenleme
+- ✅ CSV export
+
+**Kullanım Senaryoları:**
+1. **Hata denetimi:** Worker hatalı veri yazdıysa manuel düzelt
+2. **Veri temizleme:** Eski/geçersiz kayıtları toplu sil
+3. **Analiz:** Kar dağılımını görüntüle (admin filter ile)
+4. **Debug:** NotCompleted kuyruğunu kontrol et
+
+
 ---
 
 ## 🛠 Teknoloji Stack
