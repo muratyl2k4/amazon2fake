@@ -1,341 +1,1268 @@
-# README.md
+# 📦 Amazon FBA Arbitrage Analysis System
 
-# Proje: Remote ve Order Track Uygulaması
-
-Bu proje, Django ile geliştirilmiş iki temel uygulamayı içerir: **Remote App** ve **Order Track App**. Her iki uygulama da e-ticaret verilerini yönetmek ve takip etmek için tasarlanmıştır.
-
-## İçindekiler
-
-1. [Remote App](#remote-app)
-
-   * [Amaç](#ama%C3%A7)
-   * [Veritabanı Alanları](#veritaban%C4%B1-alanlar%C4%B1)
-   * [View ve Fonksiyonlar](#view-ve-fonksiyonlar)
-   * [Matematiksel Hesaplamalar](#matematiksel-hesaplamalar)
-2. [Order Track App](#order-track-app)
-
-   * [Amaç](#ama%C3%A7-1)
-   * [Veritabanı Alanları](#veritaban%C4%B1-alanlar%C4%B1-1)
-   * [View ve Fonksiyonlar](#view-ve-fonksiyonlar-1)
-   * [Takip Mantığı](#takip-mant%C4%B1%C4%9F%C4%B1)
+> **Dağıtık yapıda çalışan, Amazon SP-API ve Keepa entegrasyonlu, çoklu pazar arbitraj analiz platformu**
 
 ---
 
-## Remote App
+## 📑 İçindekiler
 
-### Amaç
-
-Remote App, Keepa benzeri bir ürün takip ve fiyat analiz sistemi sağlar. Kullanıcılar ürünlerini yükler ve sistem, mevcut satış verilerini, fiyatları ve Amazon verilerini işler. Bu veriler:
-(EKSIK VERILER AMZSRVR REPOSUNDAKI SCRIPTLER TARAFINDAN HESAPLANIP DOLDURULUYOR)
-* Ürün fiyat analizi
-* Satış performansı
-* Üçüncü parti satıcı fiyatları
-* Stok ve Buy Box durumu
-
-için kullanılır.
-
-### Veritabanı Alanları
-
-Veritabanı alanları `completed_db`, `notCompleted_db` ve `keepa_db` olarak ayrılır.
-
-#### completed_db (Tamamlanan ürünler)
-
-| Alan Adı           | Açıklama                                        |
-| ------------------ | ----------------------------------------------- |
-| User_id            | Kullanıcı ID                                    |
-| Title              | Ürün başlığı                                    |
-| Asin               | Amazon ASIN                                     |
-| SalesRank          | Güncel satış sıralaması                         |
-| SalesRank90        | 90 günlük ortalama satış sıralaması             |
-| Is_Buybox_Fba      | Buy Box FBA mı?                                 |
-| Fba_Seller_Count   | FBA satıcı sayısı                               |
-| Amazon_Current     | Amazon fiyatı                                   |
-| Buybox_Lowest      | Buy Box lowest fiyatı                           |
-| Variation_Asins    | Ürün varyasyon ASIN sayısı                      |
-| Weight             | Ürün ağırlığı (lbs)                             |
-| Profit_Percentage  | Kar yüzdesi                                     |
-| Is_Deleted_By_User | Kullanıcı tarafından silindi mi?                |
-| Pool               | Pool durumu                                     |
-| Date               | Veri girildiği tarih                            |
-| Status             | Ürün durumu (success, warning, danger, primary) |
-
-#### notCompleted_db (Tamamlanmamış ürünler)
-
-| Alan Adı      | Açıklama                                 |
-| ------------- | ---------------------------------------- |
-| Asin          | Amazon ASIN                              |
-| User_id       | Kullanıcı ID                             |
-| Diğer alanlar | Yukarıdaki completed_db alanlarının çoğu |
-
-#### keepa_db (Keepa uyumlu veriler)
-
-| Alan Adı                | Açıklama                    |
-| ----------------------- | --------------------------- |
-| Asin                    | Amazon ASIN                 |
-| Title                   | Ürün başlığı                |
-| SalesRank               | Satış sıralaması            |
-| SalesRank90             | 90 günlük ortalama sıralama |
-| Drop_Count              | Son 30 gün satış düşüşü     |
-| Buy_Price_FBA           | FBA alış fiyatı             |
-| Buy_Price_FBM           | FBM alış fiyatı             |
-| Buy_Price_BB            | Buy Box fiyatı              |
-| Buy_Price_NC            | Normal alış fiyatı          |
-| Sale_Price_NC           | Satış fiyatı                |
-| Sale_Price_BB           | Buy Box satış fiyatı        |
-| Sale_Price_FBM          | FBM satış fiyatı            |
-| Sale_Price_FBA          | FBA satış fiyatı            |
-| Buybox_Lowest           | Buy Box lowest              |
-| Is_Buybox_Fba           | Buy Box FBA mı?             |
-| Amazon_Current          | Amazon güncel fiyatı        |
-| Fba_Seller_Count        | FBA satıcı sayısı           |
-| Variation_Asins         | Varyasyon sayısı            |
-| Weight                  | Ürün ağırlığı               |
-| Referral_Fee_Percentage | Komisyon yüzdesi            |
-| Pick_and_Pack_Fee       | FBA pick&pack ücreti        |
-
-### View ve Fonksiyonlar
-
-* **get_excels**: Kullanıcıdan gelen Excel dosyasını alır, veritabanındaki ürünlerle birleştirir ve eksik verileri doldurur.
-* **check_to_notCompleted_db**: Tamamlanmamış ürünleri kontrol eder ve verileri tamamlar.
-* **dataSaver**: Keepa veritabanına yeni veriler ekler.
-* **get_or_create_completed**: completed_db'de olmayan ürünleri ekler.
-
-### Matematiksel Hesaplamalar
-
-* Ürün ağırlığı: `Weight (lbs) = max(WEIGHT * 0.0022046226, DIMENSION * 0.0610237 / 135)`
-* Kar yüzdesi: `(Satış Fiyatı - Alış Fiyatı - FBA Ücretleri - Komisyon) / Satış Fiyatı * 100`
-* Boş varyasyon sayısı: `Variation_Asins.count(',') + 1`
+- [Genel Bakış](#-genel-bakış)
+- [Sistem Mimarisi](#-sistem-mimarisi)
+- [Özellikler](#-özellikler)
+- [Teknoloji Stack](#-teknoloji-stack)
+- [Kurulum](#-kurulum)
+- [Veritabanı Yapısı](#-veritabanı-yapısı)
+- [Veri Akışı](#-veri-akışı)
+- [Detaylı Fonksiyon Açıklamaları](#-detaylı-fonksiyon-açıklamaları)
+- [API Kullanımı](#-api-kullanımı)
+- [Worker Sistemi](#-worker-sistemi)
 
 ---
 
-## Order Track App
+## 🎯 Genel Bakış
 
-### Amaç
+Bu proje, **Amazon FBA (Fulfillment by Amazon) arbitrajı** için geliştirilmiş kapsamlı bir analiz ve otomasyon sistemidir. Sistem, ABD Amazon pazarından ürün satın alıp, diğer uluslararası Amazon pazarlarında (UK, CA, JA, AU, DE, FR) satarak kar elde etme fırsatlarını otomatik olarak tespit eder.
 
-Order Track App, kargo takip ve sipariş durumu izleme sistemi sağlar. Kullanıcılar Excel dosyası yükler ve sistem:
-
-* Amazon sipariş numarasına göre kargo bilgilerini alır
-* Takip numarası ve kargo firmasını veritabanına kaydeder
-* Teslimat durumunu günceller
-* Siparişin gecikme durumunu hesaplar
-
-### Veritabanı Alanları
-
-`Order` modeli alanları:
-
-| Alan Adı      | Açıklama                           |
-| ------------- | ---------------------------------- |
-| AmazonOrderId | Amazon sipariş numarası            |
-| Tracknumber   | Ana takip numarası                 |
-| Tracknumber2  | Alternatif takip numarası          |
-| Courier_Name  | Kargo firması (sistem kodu)        |
-| Last_Status   | Son durum mesajı                   |
-| Status        | Arka planda gösterilen durum rengi |
-
-### View ve Fonksiyonlar
-
-* **kargotakip (view)**:
-
-  * Kullanıcı formu ile dosya yükler
-  * order_track fonksiyonunu çağırır
-  * Takip bilgilerini şablona gönderir
-
-* **order_track (fonksiyon)**:
-
-  * Tüm Order veritabanını okur
-  * Tracking API ile güncel durumu alır
-  * Son kontrol zamanına göre gecikmeyi hesaplar
-  * Teslim edilen ürünleri işaretler ve renk kodu atar
-
-* **TrackingApi**:
-
-  * TrackingMore API ile iletişim kurar
-  * POST ve GET işlemlerini yönetir
-
-* **courier_code**:
-
-  * Kargo firması ismini API uyumlu koda çevirir
-
-* **uploaded_file**:
-
-  * Excel dosyasındaki siparişleri veritabanına ekler veya günceller
-
-### Takip Mantığı
-
-1. Tracking numarası ve kargo firması alınır.
-2. TrackingMore API ile kargo durumu sorgulanır.
-3. Teslimat durumu ve son checkpoint zamanı ile geçen süre hesaplanır.
-4. `lastupdate` alanı dakika, saat veya gün cinsinden hesaplanır.
-5. Renk kodu atanır:
-
-   * `success` -> Teslim edildi
-   * `warning` -> 2 günden fazla gecikme
-   * `danger` -> 5 günden fazla gecikme
-   * `primary` -> Normal takip
-6. Veriler Order modeli ile kaydedilir ve şablona gönderilir.
+### Ana Hedefler:
+✅ Farklı pazarlar arasında fiyat farklarını tespit etme  
+✅ Karlılık hesaplamaları (Amazon ücretleri, kargo, vergi, kur dahil)  
+✅ Satış hızı ve rekabet analizi  
+✅ Çoklu kullanıcı desteği  
+✅ Excel ve manuel ASIN yükleme  
 
 ---
 
+## 🏗 Sistem Mimarisi
 
-# Proje README
+Proje **iki ana bileşenden** oluşur:
 
-## Proje Genel Tanımı
-Bu proje, **Amazon siparişlerini takip eden ve Keepa ile uyumlu verileri işleyen** bir Django uygulamasıdır. Proje iki ana uygulamadan oluşur:  
-
-1. **Remote App** → Keepa’den veya benzeri kaynaklardan alınan ürün ve fiyat verilerini işler.  
-2. **Order Track App** → Siparişleri takip eder, kargo durumlarını günceller ve kullanıcıya gösterir.  
-
-Proje çoklu veritabanı kullanır:  
-- `default` → Lokal veya ana veritabanı (auth, sessions, order_track vs.)  
-- `mysql` → Remote app verilerini saklamak için.  
-
-Router sınıflarıyla uygulamalar kendi veritabanına yönlendirilir:
-
-```python
-class sqLiteRouter:
-    route_app_labels = {"auth", "contenttypes" , "admin" , "sessions" , "main" , "order_track" , "accounts" }
-    def db_for_read(self, model, **hints):
-        if model._meta.app_label in self.route_app_labels:
-            return "default"
-        return None
+```
+┌─────────────────────────────────────────────────────────┐
+│                    KULLANICI (Web Browser)              │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│          AMAZON2FAKE (Django Web Uygulaması)            │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │  • Kullanıcı Arayüzü                              │   │
+│  │  • ASIN Yükleme (Manuel/Excel)                    │   │
+│  │  • Filtreleme ve Sıralama                         │   │
+│  │  • Pool Yönetimi                                  │   │
+│  │  • Excel İndirme                                  │   │
+│  └──────────────────────────────────────────────────┘   │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│         PYTHONANYWHERE MYSQL DATABASE (Shared)          │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │  Tables (Her pazar için):                        │   │
+│  │  • remote_completed{market}                      │   │
+│  │  • remote_notcompleted{market}                   │   │
+│  │  • remote_keepaexcel{market}                     │   │
+│  └──────────────────────────────────────────────────┘   │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│              AMZSRVR (Backend Worker)                   │
+│  ┌──────────────────────────────────────────────────┐   │
+│  │  • Sonsuz Döngü Controller                       │   │
+│  │  • Amazon SP-API Entegrasyonu                    │   │
+│  │  • Keepa Excel İşleme                            │   │
+│  │  • Multithreading                                │   │
+│  │  • Kar Hesaplama Algoritması                     │   │
+│  └──────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
 ```
 
+### 1️⃣ **amazon2fake** (Frontend - Django)
+- **Rol:** Kullanıcı arayüzü ve veri yönetimi
+- **Teknoloji:** Django 4.1+, MySQL + SQLite
+- **Sorumluluklar:**
+  - Kullanıcı kimlik doğrulama
+  - ASIN girişi (Manuel/Excel)
+  - Veri görselleştirme ve filtreleme
+  - Pool sistemi (favori ürünler)
+  - Excel export
+
+### 2️⃣ **amzsrvr** (Backend Worker - Python)
+- **Rol:** Arka plan veri işleme ve API entegrasyonu
+- **Teknoloji:** Python 3.x, SP-API, Threading
+- **Sorumluluklar:**
+  - Amazon SP-API'dan fiyat çekme
+  - Keepa Excel verilerini işleme
+  - Kar hesaplama (vergi, kur, Amazon ücretleri)
+  - Veritabanına sonuç yazma
+
+---
+
+## ✨ Özellikler
+
+### 👤 Kullanıcı Yönetimi
+- **Kayıt/Giriş:** Standart Django authentication
+- **Kullanıcı İzolasyonu:** Her kullanıcı sadece kendi verilerini görür
+- **Admin Paneli:** Süper kullanıcılar tüm verilere erişebilir
+
+### 📥 Veri Girişi
+#### 1. Manuel ASIN Girişi
 ```python
-class mySQLRouter:
-    route_app_labels = {"remote"}
-    def db_for_read(self, model, **hints):
-        if model._meta.app_label in self.route_app_labels:
-            return "mysql"
-        return None
+# views.py: fbaMarketPage -> POST: 'asin_text_upload'
+# Kullanıcı, textarea'ya ASIN listesi yapıştırır
+# Sistem her ASIN'i:
+#   - Veritabanında kontrol eder
+#   - Güncel mi değil mi kontrol eder (1 günden eski ise yeniden işler)
+#   - NotCompleted tablosuna ekler
 ```
 
-## Remote App (Keepa Verileri)
-
-### Amaç
-Remote app, Keepa’dan veya benzeri kaynaklardan çekilen **ürün fiyat ve stok bilgilerini** işler. Kullanıcıların güncel veriye göre işlem yapabilmesini sağlar.
-
-### Temel Fonksiyon: `get_excels`
-`get_excels` fonksiyonu iki excel dosyasını (completed ve target) alır ve veritabanıyla eşleştirir:
-
+#### 2. Keepa Excel Yükleme
 ```python
-def get_excels(com_file , target_file , cursor ,keepa_db_query , completed_db_query , notCompleted_db_query , user_id):
-    com_pd_file = pd.read_excel(com_file)[['Title','ASIN','Buy Box: Current','New: Current','New, 3rd Party FBA: Current','New, 3rd Party FBM: Current']]
-    target_pd_file = pd.read_excel(target_file)[['ASIN','Sales Rank: Current','Sales Rank: Drops last 30 days','Buy Box: Current','New: Current','New, 3rd Party FBA: Current','New, 3rd Party FBM: Current','Referral Fee %','FBA Fees:','Buy Box: Is FBA','Count of retrieved live offers: New, FBA' , 'Amazon: Current' , 'Package: Dimension (cm³)' ,  'Package: Weight (g)' , 'Sales Rank: 90 days avg.' , 'Buy Box: Lowest' , 'Variation ASINs']]
+# fileupload.py: keepa_excel()
+# İki Excel dosyası gereklidir:
+#   1. COM Excel: ABD pazarı alış fiyatları
+#   2. TARGET Excel: Hedef pazar satış fiyatları
+# Sistem:
+#   - İki dosyayı merge eder
+#   - KeepaExcel tablosuna yazar
+#   - Worker işleme almak üzere bekler
 ```
 
-#### İşlevler
-- Verilen Excel dosyalarını pandas ile okur ve gerekli kolonları seçer.  
-- Kolon isimlerini veritabanı ile uyumlu hâle getirir (`rename`).  
-- Merge işlemi ile **completed ve target verilerini birleştirir**.  
-- Boş değerleri doldurur ve Keepa veritabanına ekler (`add_to_keepa_db_df`).  
-- Kullanıcının veritabanında zaten bulunan ürünleri günceller veya yeni ekler.  
+### 🔍 Filtreleme ve Sıralama
+Kullanıcılar şu kriterlere göre ürünleri filtreleyebilir:
+- **Kar Yüzdesi (Profit Percentage):** Min/Max
+- **Drop Count:** 30 günde kaç kez fiyat düştü
+- **Satış Sayısı (Sales Info)**
+- **FBA Satıcı Sayısı**
+- **Amazon Satış Fiyatı**
+- **Ağırlık (Weight/Lbs)**
 
-#### Matematiksel Mantık
-- `Weight` ve `Dimension` kolonları üzerinden ürün ağırlığı ve hacimden **tahmini shipping hesaplamaları** yapılır:
+Sıralama seçenekleri:
+- Kar yüzdesine göre (Yüksek → Düşük / Düşük → Yüksek)
+- FBA satıcı sayısına göre
+- Satış sayısına göre
 
+### 🗂 Pool Sistemi
+- Kullanıcılar, beğendikleri ürünleri "Pool"a ekleyebilir
+- Pool, favori ürünlerin toplanması için kullanılır
+- Pool'dan ana listeye geri taşıma mümkündür
+
+### 🗑 Silme/Geri Yükleme
+- Kullanıcılar ürünleri sildiğinde, veritabanından **silinmez**
+- Sadece `Is_Deleted_By_User=True` olarak işaretlenir
+- "Deleted" sayfasından tekrar geri yüklenebilir
+
+### 📊 Excel Export
+- Filtrelenmiş veriler Excel olarak indirilebilir
+- Türkçe başlıklar içerir
+- Tüm önemli alanları içerir (Kar, Ratio, SalesRank, vb.)
+
+---
+
+## 🛠 Teknoloji Stack
+
+### Django (amazon2fake)
 ```python
-Weight = max(WEIGHT * 0.0022046226 , DIMENSION * 0.0610237 /135)
+- Django 4.1.1
+- django-pandas (DataFrame entegrasyonu)
+- MySQLdb (MySQL connector)
+- django-dramatiq (Asenkron görevler için - kurulu ama konfigüre edilmemiş)
 ```
 
-- Satış ve kâr oranları hesaplamaları, Keepa’daki fiyat verileri ile kullanıcı fiyatları arasındaki fark üzerinden yapılır.  
-
-## Order Track App
-
-### Amaç
-Order Track app, **Amazon siparişlerini ve kargo durumlarını takip eder**. Kullanıcıya son durum ve tahmini teslim zamanı gösterilir.
-
-### View: `kargotakip`
-
+### Worker (amzsrvr)
 ```python
-def kargotakip(request):
-    apiKey = "w7xxm92y-c73w-k4ip-l6we-yhufw5dtw51g"
-    order_list = order_track(apiKey=apiKey)
-    if request.method == 'POST':
-        form = UploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            uploaded_file(request.FILES['file'] , Fransa)
+- python-amazon-sp-api (SP-API Python SDK)
+- pandas (Veri manipülasyonu)
+- MySQLdb + sshtunnel (PythonAnywhere SSH bağlantısı)
+- google-currency (Kur çevirimi)
+- threading (Paralel işlem)
+```
+
+### Veritabanları
+- **SQLite:** Django default DB (lokal geliştirme)
+- **MySQL (PythonAnywhere):** Paylaşılan production database
+
+---
+
+## 🗄 Veritabanı Yapısı
+
+### Tablo Şeması (Her pazar için tekrarlanır: uk, ca, ja, au, fr, de)
+
+#### 1️⃣ `remote_completed{market}` 
+**Amaç:** İşlenmiş ve analizi tamamlanmış ürünler
+
+| Alan | Tip | Açıklama |
+|------|-----|----------|
+| `User` | ForeignKey | Hangi kullanıcıya ait |
+| `Asin` | CharField | Amazon ürün kodu |
+| `Title` | CharField | Ürün adı |
+| `SalesRank` | Integer | Anlık satış sıralaması |
+| `SalesRank90` | Integer | 90 günlük ortalama |
+| `Drop_Count` | Integer | 30 günde fiyat düşüş sayısı |
+| `Buy_Price` | Float | ABD'den alış fiyatı ($) |
+| `Sale_Price` | Float | Hedef pazarda satış fiyatı (lokalr para birimi) |
+| `Ratio` | Float | Satış/Maliyet oranı (1.5+ karlı kabul edilir) |
+| `Cost` | Float | Toplam maliyet (alış + kargo + kur) |
+| `Profit` | Float | Net kar |
+| `Profit_Percentage` | Float | Kar yüzdesi (Kar/Maliyet) |
+| `Sales_Info` | Integer | Tahmini aylık satış sayısı |
+| `Date` | Date | Son güncellenme tarihi |
+| `Fba_Seller_Count` | Integer | FBA ile satan rekabet sayısı |
+| `Is_Buybox_Fba` | Boolean | Buybox FBA mı? |
+| `Amazon_Current` | Float | Amazon'un kendi sattığı fiyat |
+| `Buybox_Lowest` | Float | En düşük buybox fiyatı |
+| `Variation_Asins` | Integer | Varyasyon sayısı |
+| `Weight` | Float | Ağırlık (lbs) |
+| `Pool` | Boolean | Pool'da mı? |
+| `Is_Deleted_By_User` | Boolean | Kullanıcı tarafından silinmiş mi? |
+| `Error_Code` | Boolean | İşlemde hata oluştu mu? |
+
+#### 2️⃣ `remote_notcompleted{market}`
+**Amaç:** İşlenmeyi bekleyen ASIN kuyruk sistemi
+
+| Alan | Tip | Açıklama |
+|------|-----|----------|
+| `Asin` | CharField | İşlenecek ASIN |
+
+**İşleyiş:**
+- Kullanıcı ASIN girdiğinde buraya yazılır
+- Worker bu tabloyu kontrol eder
+- İşlendikten sonra buradan silinir ve `remote_completed` tablosuna yazılır
+
+#### 3️⃣ `remote_keepaexcel{market}`
+**Amaç:** Keepa'dan yüklenen ham Excel verileri
+
+| Alan | Tip | Açıklama |
+|------|-----|----------|
+| `Asin` | CharField | Ürün kodu |
+| `Title` | CharField | Ürün adı |
+| `SalesRank` | Integer | Satış sıralaması |
+| `SalesRank90` | Integer | 90 günlük ortalama |
+| `Drop_Count` | Integer | Fiyat düşüş sayısı |
+| `Buy_Price_FBA/FBM/BB/NC` | Float | ABD farklı satıcı tipleri alış fiyatları |
+| `Sale_Price_FBA/FBM/BB/NC` | Float | Hedef pazar satış fiyatları |
+| `Referral_Fee_Percentage` | Float | Amazon komisyon oranı |
+| `Pick_and_Pack_Fee` | Float | FBA işlem ücreti |
+| `Is_Buybox_Fba` | Boolean | Buybox FBA mı? |
+| `Fba_Seller_Count` | Integer | FBA satıcı sayısı |
+| `Amazon_Current` | Float | Amazon satış fiyatı |
+| `Weight` | Float | Ağırlık |
+| `Variation_Asins` | Integer | Varyasyon sayısı |
+| `Buybox_Lowest` | Float | En düşük buybox |
+
+**İşleyiş:**
+- Excel yüklendiğinde buraya yazılır
+- KeepaWorker bu verileri işler
+- İşlem sonrası buradan silinir ve `remote_completed`'e yazılır
+
+#### 4️⃣ `remote_exceldata`
+**Amaç:** Yüklenen Excel dosyalarının kaydı
+
+| Alan | Tip | Açıklama |
+|------|-----|----------|
+| `Userx` | ForeignKey | Yükleyen kullanıcı |
+| `Market` | CharField | Hedef pazar (uk, ca, vb.) |
+| `com_asin` | FileField | ABD Excel dosyası |
+| `target_asin` | FileField | Hedef pazar Excel dosyası |
+| `Is_executed` | Boolean | İşlendi mi? |
+| `DateTime` | DateTime | Yüklenme zamanı |
+
+---
+
+## 🔄 Veri Akışı
+
+### Senaryo 1: Manuel ASIN Girişi
+
+```
+1. KULLANICI → Django Web Paneli
+   └─ "fba/uk" sayfasında textarea'ya ASIN yapıştırır
+   
+2. DJANGO (views.py: fbaMarketPage)
+   └─ POST isteği alır (asin_text_upload)
+   └─ Her ASIN için:
+       ├─ Veritabanında var mı kontrol eder (remote_completeduk)
+       ├─ Varsa ve 1 günden eskiyse:
+       │   └─ remote_notcompleteduk'a ekler (yeniden işlensin)
+       └─ Yoksa:
+           ├─ remote_completeduk'a boş kayıt atar (User + Asin)
+           └─ remote_notcompleteduk'a ekler
+
+3. WORKER (main_controller.py)
+   └─ Her 200 saniyede bir döngü çalışır
+   └─ remote_notcompleteduk tablosunu kontrol eder
+   └─ Yeni kayıt varsa:
+       └─ main_worker.py'ye gönderir
+
+4. WORKER (main_worker.py)
+   └─ Amazon SP-API'dan veri çeker:
+       ├─ get_Buy_Price() → ABD fiyatı, ağırlık, başlık
+       ├─ get_Sell_Price() → UK fiyatı, rekabet durumu
+       └─ calculate() → Kar hesaplama (kur, kargo, vergi, Amazon fee)
+   
+5. WORKER (main_controller.py: completed_writer_thread)
+   └─ Sonuçları remote_completeduk'a UPDATE eder
+   └─ remote_notcompleteduk'dan DELETE eder
+
+6. KULLANICI → Django Web Paneli
+   └─ Sayfayı yeniler
+   └─ İşlenmiş veriyi görür (Profit, Ratio, vb.)
+```
+
+### Senaryo 2: Keepa Excel Yükleme
+
+```
+1. KULLANICI → Django Web Paneli
+   └─ "fba/ca" sayfasında 2 Excel dosyası yükler:
+       ├─ com_asin.xlsx (ABD verileri)
+       └─ target_asin.xlsx (CA verileri)
+
+2. DJANGO (fileupload.py: keepa_excel)
+   └─ İki Excel'i merge eder (ASIN bazlı)
+   └─ Her satır için:
+       ├─ remote_keepaexcelca'ya kayıt ekler (ham veri)
+       └─ remote_completedca'ya basit kayıt ekler (Title, SalesRank vb.)
+
+3. WORKER (main_controller.py)
+   └─ remote_keepaexcelca tablosunu kontrol eder
+   └─ Yeni kayıt varsa:
+       └─ keepaWorker.py'ye gönderir
+
+4. WORKER (keepaWorker.py)
+   └─ Keepa verilerini işler:
+       ├─ get_Com() → ABD en düşük fiyatı bulur (FBA/FBM/BB karşılaştırması)
+       ├─ get_Target() → CA en düşük fiyatı bulur
+       └─ calculate_Final() → Kar hesaplama (Vergi, referral fee, fba fee)
+
+5. WORKER (keepaWorker.py)
+   └─ remote_completedca'ya UPDATE eder (Buy_Price, Sale_Price, Profit...)
+   └─ remote_keepaexcelca'dan DELETE eder
+
+6. KULLANICI → Django Web Paneli
+   └─ İşlenmiş ürünleri görür
+```
+
+---
+
+## 📋 Detaylı Fonksiyon Açıklamaları
+
+### Django (amazon2fake/remote/views.py)
+
+#### `fbaHomePage(request)`
+**Amaç:** Ana pazar seçim sayfası  
+**İşlev:**
+- Mevcut pazarları listeler: UK, CA, JA, AU, FR, DE
+- Template: `fbahome.html`
+
+#### `fbaMarketPage(request, country)`
+**Amaç:** Pazara özgü ürün listesi ve yönetim sayfası  
+**Parametreler:**
+- `country`: Pazar kodu (uk, ca, vb.)
+
+**GET İşlemleri:**
+- Kullanıcının o pazardaki tüm ürünlerini gösterir
+- Filtreleme parametrelerini uygular:
+  - `drop_count_min/max`
+  - `profit_percentage_min/max`
+  - `sales_info_min/max`
+  - `fba_seller_count_min/max`
+  - `amazon_sale_price_min/max`
+  - `weight_min/max`
+- Sıralama parametreleri:
+  - `sortByProfitPercentage`: h2l (yüksekten düşüğe), l2h (tam tersi)
+  - `sortByFBASeller`
+  - `sortBySalesInfo`
+
+**POST İşlemleri:**
+
+1. **`asin_text_upload`**: Manuel ASIN yapıştırma
+   ```python
+   # Kullanıcı textarea'ya ASIN listesi yapıştırır (her satır bir ASIN)
+   # Sistem:
+   #   - ASIN'i trim eder (\r\n temizler)
+   #   - Veritabanında varsa:
+   #       - 1 günden eskiyse → NotCompleted'e ekle
+   #       - 1 günden yeniyse → Completed'deki kaydı kopyala
+   #   - Yoksa:
+   #       - Keepa'da varsa → Keepa verisini Completed'e aktar
+   #       - Keepa'da da yoksa → Boş kayıt + NotCompleted'e ekle
+   ```
+
+2. **`asin_file_upload`**: Excel yükleme
+   ```python
+   # excelData modeline kaydeder
+   # Dramatiq worker (şu an pasif) işleyecek
+   ```
+
+3. **`send_pool`**: Seçili ürünleri Pool'a ekleme
+   ```python
+   # Checkbox'larla seçilen ASIN'leri alır
+   # Pool=True olarak günceller
+   ```
+
+4. **`download_products`**: Excel indirme
+   ```python
+   # Seçili ürünleri Excel'e çevirir
+   # dbdownload() fonksiyonunu çağırır
+   ```
+
+5. **`delete_products`**: Ürün silme
+   ```python
+   # Is_Deleted_By_User=True yapar
+   # Gerçek silme işlemi YAPILMAZ
+   ```
+
+6. **`all_selected`**: Toplu işlemler
+   - `send_pool_all`: Tüm listeyi Pool'a ekle
+   - `download_all`: Tüm listeyi Excel olarak indir
+   - `delete_all`: Tüm listeyi sil
+
+#### `fbaMarketPoolPage(request, country)`
+**Amaç:** Pool'daki ürünler  
+**İşlev:**
+- `Pool=True` olan ürünleri gösterir
+- Filtreleme ve sıralama destekler
+- Pool'dan çıkarma (Pool=False) özelliği
+
+#### `fbaMarketDeletedPage(request, country)`
+**Amaç:** Silinen ürünler  
+**İşlev:**
+- `Is_Deleted_By_User=True` olanları gösterir
+- Geri yükleme (Is_Deleted_By_User=False) özelliği
+
+#### `dbdownload(country, queryset)`
+**Amaç:** Excel export  
+**İşlev:**
+- Queryset'i Django-Pandas ile DataFrame'e çevirir
+- Türkçe sütun isimleri uygular
+- Timestamp'li dosya adı oluşturur
+- `static/downloaded_datas/` klasörüne kaydeder
+- HTTP response ile download link döner
+
+#### `product_filter(key, value, data, notOrderedData)`
+**Amaç:** Filtreleme yardımcı fonksiyonu  
+**İşlev:**
+- GET parametrelerine göre queryset'i filtreler
+- Django ORM filtrelerini uygular (`__gte`, `__lte`, `order_by`)
+
+---
+
+### Django (amazon2fake/remote/fileupload.py)
+
+#### `keepa_excel(com_file, target_file, keepa_db, completed_db, notCompleted_db, user)`
+**Amaç:** Keepa Excel dosyalarını işleme  
+**Parametreler:**
+- `com_file`: ABD Excel dosyası (alış fiyatları)
+- `target_file`: Hedef pazar Excel dosyası (satış fiyatları)
+- `keepa_db`: KeepaExcel model (UK, CA, vb.)
+- `completed_db`: Completed model
+- `notCompleted_db`: NotCompleted model
+- `user`: Yükleyen kullanıcı
+
+**İşleyiş:**
+```python
+1. Excel dosyalarını pandas ile okur
+2. Sütun isimlerini veritabanı alanlarına map eder
+3. İki DataFrame'i ASIN bazlı merge eder
+4. Boş değerleri -21 ile doldurur (NaN kontrolü için)
+5. Her satır için:
+    a. ASIN veritabanında var mı kontrol eder
+    b. Varsa:
+        - 1 günden eskiyse → NotCompleted'e ekle
+        - Yeniyse → Kullanıcı için kopyala
+    c. Yoksa:
+        - check_to_notCompleted_db() çağrısı
+6. Keepa verisini keepa_db'ye kaydeder (dataSaver)
+7. Completed tablosuna basit kayıt ekler (get_or_create_completed)
+```
+
+**Önemli Detaylar:**
+- Ağırlık hesaplama: `max(WEIGHT * 0.0022046226, DIMENSION * 0.0610237 / 135)`
+  - WEIGHT: gram → lbs çevrimi
+  - DIMENSION: cm³ → lbs dimitrik ağırlık
+  - İkisinden büyük olanı alır (taşıma ücreti hesabı için)
+
+- Varyasyon sayısı: `VARIATION_ASINS.count(',') + 1`
+  - Keepa varyasyonları virgülle ayırır: "B07X,B07Y,B07Z" → 3 varyasyon
+
+#### `check_to_notCompleted_db(...)`
+**Amaç:** NotCompleted tablosundan silme ve Completed güncelleme  
+**İşlev:**
+- NotCompleted'de varsa siler
+- Completed'deki boş alanları doldurur (Title, SalesRank, vb.)
+
+#### `dataSaver(...)`
+**Amaç:** KeepaExcel tablosuna kaydetme  
+**İşlev:**
+- ASIN varsa günceller, yoksa yeni kayıt yapar
+- `using='mysql'` parametresi ile MySQL'e yazar
+
+#### `get_or_create_completed(...)`
+**Amaç:** Kullanıcı için Completed kaydı oluşturma  
+**İşlev:**
+- Kullanıcı + ASIN kombinasyonu yoksa yeni kayıt atar
+- Başlangıç verileri: Title, SalesRank, Weight, vb.
+- Kar hesaplamaları boş bırakılır (Worker dolduracak)
+
+---
+
+### Worker (amzsrvr/main_controller.py)
+
+#### Sonsuz Döngü Mantığı
+```python
+while True:
+    # 1. Veritabanından veri çek
+    for market in markets:
+        query = f"SELECT * from remote_notcompleted{market.target}"
+        market.notcompleted = pd.read_sql(query, connection)
+        
+        query = f"SELECT * from remote_keepaexcel{market.target}"
+        market.keepaexcel = pd.read_sql(query, connection)
+    
+    # 2. İşlenecek veri miktarını hesapla
+    total_notcompleted = sum(len(m.notcompleted) for m in markets)
+    total_keepaexcel = sum(len(m.keepaexcel) for m in markets)
+    
+    # 3. Her pazar için ağırlıklı parçalama
+    for market in markets:
+        ratio = len(market.notcompleted) / total_notcompleted
+        slice_df = market.notcompleted.tail(int(ratio * 100))
+        
+        # 4. Worker'lara gönder (Threading)
+        if len(slice_df) >= 1:
+            market.completed_asin = work(slice_df, us_market, market.my_market_place)
+        
+        keepa_ratio = len(market.keepaexcel) / total_keepaexcel
+        slice_keepa = market.keepaexcel.tail(int(keepa_ratio * 200))
+        
+        if len(slice_keepa) >= 1:
+            t1 = threading.Thread(target=keepa_worker_thread, args=[...])
+            t1.start()
+    
+    # 5. Sonuçları veritabanına yaz
+    if total_completed > 0:
+        completed_writer_thread()
+    
+    # 6. 200 saniye bekle
+    time.sleep(200)
+```
+
+#### `completed_writer_thread()`
+**Amaç:** İşlenmiş verileri veritabanına yazmak  
+**İşlev:**
+```python
+for market in markets:
+    for i in range(len(market.completed_asin)):
+        # Tüm alanları (Profit, Ratio, SalesRank, vb.) UPDATE eder
+        query = f"""UPDATE remote_completed{market.target} 
+                    SET SalesRank={x}, Buy_Price={y}, ... 
+                    WHERE Asin='{asin}'"""
+        cursor.execute(query)
+        
+        # NotCompleted'den siler
+        query = f"DELETE FROM remote_notcompleted{market.target} WHERE Asin='{asin}'"
+        cursor.execute(query)
+```
+
+---
+
+### Worker (amzsrvr/main_worker.py)
+
+#### `work(slice_of_df, us_market, target_market)`
+**Amaç:** Ana işleme fonksiyonu  
+**Parametreler:**
+- `slice_of_df`: İşlenecek ASIN'lerin DataFrame'i
+- `us_market`: ABD pazar bilgileri (credentials, marketplace)
+- `target_market`: Hedef pazar bilgileri
+
+**İşleyiş:**
+```python
+# 1. Global DataFrame oluştur
+main_dataframe = pd.merge(boş_df, slice_of_df['Asin'], on='Asin')
+
+# 2. Sonsuz döngü (tüm veriler işlenene kadar)
+while True:
+    # 3. İşlenecek ASIN'leri filtrele
+    buy_price_df = main_df[(Error==False) & (Buy_Price.isnull())]
+    sale_price_df = main_df[(Error==False) & (Buy_Price.notnull()) & (Sale_Price.isnull())]
+    profit_df = main_df[(Error==False) & (Buy_Price.notnull()) & (Sale_Price.notnull()) & (Profit.isnull())]
+    
+    # 4. Hiç işlenecek veri kalmadıysa ÇIKIŞ
+    if (buy_price_df.count() + sale_price_df.count() + profit_df.count()) <= 0:
+        break
+    
+    # 5. Threading ile paralel işlem
+    threads = []
+    
+    for asin in buy_price_df:
+        t = threading.Thread(target=get_Buy_Price, args=[asin, us_market.credentials])
+        threads.append(t)
+        t.start()
+    
+    for asin in sale_price_df:
+        t = threading.Thread(target=get_Sell_Price, args=[asin, target_market.credentials, target_market.marketplace])
+        threads.append(t)
+        t.start()
+    
+    for asin in profit_df:
+        t = threading.Thread(target=calculate, args=[asin, ...])
+        threads.append(t)
+        t.start()
+    
+    # 6. Tüm thread'lerin bitmesini bekle
+    for thread in threads:
+        thread.join()
+    
+    # 7. Her 10 iterasyonda 5 saniye soluklan (rate limiting)
+    if k % 10 == 0:
+        time.sleep(5)
+
+# 8. İşlenmiş DataFrame'i döndür
+return main_dataframe
+```
+
+#### `get_Buy_Price(asin, credentials)`
+**Amaç:** ABD pazarından alış fiyatını çekmek  
+**API Çağrıları:**
+1. **Products.get_item_offers()**: Fiyat bilgisi
+   - `LowestPrices` içinden en düşük fiyatı bulur
+   - Condition: "new" olanları filtreler
+
+2. **Catalog.get_item()**: Ürün detayları
+   - Title
+   - PackageDimensions (Ağırlık ve boyut hesaplama)
+   - SalesRank
+
+**Hata Yönetimi:**
+```python
+exception_codes = {
+    'PackageDimensions': -8888,
+    'Low_Ratio': -777777,
+    'Unauthorized': -666666,
+    'InvalidInput': -555555,
+    'feesEstimate': -444444,
+    'BuyboxPrices': -333333,
+    'LowestPrices': -222222,
+    'noCredential': -111111
+}
+
+# Hata olduğunda:
+#   - Error_Code = True
+#   - Buy_Price = exception_code (negatif sayı)
+```
+
+#### `get_Sell_Price(asin, credentials, target_marketplace)`
+**Amaç:** Hedef pazardan satış fiyatını çekmek  
+**API Çağrısı:**
+- **Products.get_item_offers()** (hedef pazar için)
+
+**Çıkarılan Veriler:**
+- `lowestSellPrice`: En düşük satış fiyatı
+- `Is_Buybox_Fba`: Buybox FBA tarafından mı kazanılmış?
+- `Fba_Seller_Count`: FBA satıcı sayısı
+- `Amazon_Current`: Amazon kendi satıyor mu? (SellerId kontrolü)
+
+**Amazon Satıcı Tespiti:**
+```python
+amazon_Market_place_Ids = [
+    'A3DWYIK6Y9EEQB',  # CA
+    'AN1VRQENFRJN5',   # JA
+    'ANEGB3WVEVKZB',   # AU
+    'A3JWKAKR8XB7XF',  # DE
+    'A1X6FK5RDHNB96'   # FR
+]
+
+for offer in targetResponse['Offers']:
+    if offer['SellerId'] in amazon_Market_place_Ids:
+        Amazon_Current = offer['ListingPrice']['Amount']
+```
+
+#### `calculate(asin, credentials, target_marketplace, lowestBuyPrice, lowestSellPrice, shipping_cost, curr_rate, curr_type, minRatio)`
+**Amaç:** Kar hesaplama
+
+**Formüller:**
+
+1. **Maliyet (Cost):**
+   ```python
+   cost = (lowestBuyPrice + shipping_cost + 1) * curr_rate
+   # lowestBuyPrice: ABD fiyatı ($)
+   # shipping_cost: Sabit kargo maliyeti ($3)
+   # +1: Ek işlem gideri
+   # curr_rate: Dolar → Hedef para birimi kuru
+   ```
+
+2. **Ratio (Oran):**
+   ```python
+   ratio = lowestSellPrice / cost
+   # Eğer ratio >= 1.5 ise karlı kabul edilir
+   # Değilse → Profit = -777777 (Low_Ratio hatası)
+   ```
+
+3. **Kar (Profit):**
+   ```python
+   # API'den Amazon ücretlerini çek
+   productResponse = ProductFees.get_product_fees_estimate_for_asin(asin, lowestSellPrice, ...)
+   totalFee = productResponse['TotalFeesEstimate']['Amount']
+   
+   # Vergi (VAT) hesaplama (sadece DE/FR için)
+   vat_cost = 0
+   if target == DE or target == FR:
+       vat_cost = lowestSellPrice / 6
+   
+   # Fee çarpanı (UK/DE/FR için VAT dahil)
+   fee_mult = 1
+   if target in [DE, FR, UK]:
+       fee_mult = 1.2
+   
+   # Net kar
+   profit = lowestSellPrice - vat_cost - (totalFee * fee_mult) - cost
+   ```
+
+4. **Kar Yüzdesi:**
+   ```python
+   profit_percentage = profit / cost
+   ```
+
+**Önemli Notlar:**
+- **KDV (VAT) Düşümü:**
+  - DE/FR: Satış fiyatının 1/6'sı KDV olarak düşülür
+  - UK/DE/FR: Amazon ücretlerine %20 vergi eklenir
+
+- **Amazon SP-API ProductFees:**
+  - Referral fee (komisyon)
+  - FBA fulfillment fee (depolama + paketleme)
+  - Variable closing fee (kapanış ücreti)
+
+---
+
+### Worker (amzsrvr/keepaWorker.py)
+
+#### `keepa_work(result_dataFrame, target_market, curr_rate, shipping_cost)`
+**Amaç:** Keepa Excel verilerinden kar hesaplama
+
+**İşleyiş:**
+```python
+# 1. DataFrame'i COM ve TARGET olarak ayır
+com = result_dataFrame[['Title', 'Asin', 'Buy_Price_FBA', 'Buy_Price_FBM', ...]]
+target = result_dataFrame[['Asin', 'SalesRank', 'Sale_Price_FBA', ...]]
+
+# 2. En düşük fiyatları bul
+com_final = get_Com(com)          # ABD en düşük alış
+target_final = get_Target(target)  # Hedef en düşük satış
+
+# 3. Merge et
+data_start = pd.merge(com_final, target_final, on='ASIN')
+
+# 4. Kar hesapla
+final_df = calculate_Final(target_market, data_start, curr_rate, shipping_cost)
+
+# 5. Veritabanına UPDATE et
+for i in range(len(final_df)):
+    query = f"""UPDATE remote_completed{target_market} 
+                SET Buy_Price={x}, Sale_Price={y}, Profit={z}, ... 
+                WHERE Asin='{asin}'"""
+    cursor.execute(query)
+    
+    # Keepa tablosundan sil
+    query = f"DELETE FROM remote_keepaexcel{target_market} WHERE Asin='{asin}'"
+    cursor.execute(query)
+```
+
+#### `get_Com(target)` / `get_Target(target)`
+**Amaç:** En düşük fiyatı bulmak
+
+**Mantık:**
+```python
+# COM için (Alış - ABD):
+# 1. FBA ve FBM ikisi de NULL ise:
+#    - BB (BuyBox) varsa → BB fiyatı
+#    - BB de yoksa → NC (New Current) fiyatı
+# 2. FBA veya FBM varsa:
+#    → min(BB, FBA, FBM) en düşük olanı al
+
+# TARGET için (Satış - Hedef pazar):
+# Aynı mantık, sadece Sale_Price sütunları kullanılır
+```
+
+**Neden bu kadar karmaşık?**
+- Keepa'da farklı satıcı tipleri ayrı sütunlarda gelir:
+  - **FBA**: Amazon'un deposundan gönderim
+  - **FBM**: Satıcının kendi deposundan
+  - **BB**: Buybox sahibinin fiyatı
+  - **NC**: Yeni ürün genel fiyatı
+- Sistem en ucuz seçeneği bulmak zorunda
+
+#### `calculate_Final(market_place, data_start, curr_rate, shipping_cost)`
+**Amaç:** Keepa verisi için kar hesaplama
+
+**Formüller:**
+```python
+# 1. Maliyet
+MALIYET = (BUY_PRICE + shipping_cost + 1) * curr_rate
+
+# 2. Oran
+ORAN = SALE_PRICE / MALIYET
+
+# 3. Amazon ücretleri (Keepa'dan gelen Referral Fee ve FBA Fee kullanılır)
+referral_fee = SALE_PRICE * Referral_Fee_Percentage
+pick_and_pack_fee = Pick_and_Pack_Fee
+
+# 4. Vergi hesaplama
+if market_place == 'ca' or 'ja' or 'au':
+    KAR = SALE_PRICE - referral_fee - pick_and_pack_fee - MALIYET
+
+elif market_place == 'fr' or 'de':
+    # KDV düşümü: SALE_PRICE / 6 * 5 (1/6'sı KDV)
+    # Ücretlere %20 vergi ekle
+    referral_fee_with_tax = referral_fee * 1.2
+    pick_and_pack_fee_with_tax = pick_and_pack_fee * 1.2
+    KAR = (SALE_PRICE / 6 * 5) - referral_fee_with_tax - pick_and_pack_fee_with_tax - MALIYET
+
+elif market_place == 'uk':
+    # KDV düşümü YOK ama ücretlere vergi var
+    referral_fee_with_tax = referral_fee * 1.2
+    pick_and_pack_fee_with_tax = pick_and_pack_fee * 1.2
+    KAR = SALE_PRICE - referral_fee_with_tax - pick_and_pack_fee_with_tax - MALIYET
+
+# 5. Kar yüzdesi
+KAR_YUZDE = KAR / MALIYET
+```
+
+**Keepa Worker vs SP-API Worker Farkı:**
+| Özellik | Keepa Worker | SP-API Worker |
+|---------|--------------|---------------|
+| Veri Kaynağı | Excel (Keepa export) | Amazon API (canlı) |
+| Hız | Çok hızlı (API yok) | Yavaş (rate limiting) |
+| Doğruluk | Excel tarihi kadar güncel | Gerçek zamanlı |
+| Amazon Ücretleri | Keepa tahminleri | API'dan gerçek veriler |
+| Kullanım Senaryosu | Toplu yükleme | Manuel ASIN sorguları |
+
+---
+
+### Worker (amzsrvr/MyMarketPlace.py)
+
+#### `MyMarketPlace(target)`
+**Amaç:** Pazar yeri konfigürasyonu
+
+**Özellikler:**
+```python
+# 1. Amazon SP-API Credentials
+credentials = {
+    'lwa_app_id': '...',          # Login with Amazon App ID
+    'lwa_client_secret': '...',   # Secret key
+    'aws_access_key': '...',      # AWS IAM access
+    'aws_secret_key': '...',      # AWS IAM secret
+    'role_arn': '...',            # AWS IAM role
+    'refresh_token': '...'        # Pazara özel token
+}
+
+# 2. API Marketplace mapping
+marketPlace_dict = {
+    'us': Marketplaces.US,
+    'ca': Marketplaces.CA,
+    'ja': Marketplaces.JP,
+    'au': Marketplaces.AU,
+    'de': Marketplaces.DE,
+    'fr': Marketplaces.FR,
+    'uk': Marketplaces.UK
+}
+
+# 3. Para birimi mapping
+curr_type_dict = {
+    'us': 'USD',
+    'ca': 'CAD',
+    'ja': 'JPY',
+    'au': 'AUD',
+    'de': 'EUR',
+    'fr': 'EUR',
+    'uk': 'GBP'
+}
+
+# 4. Dinamik kur çevirimi
+def current_currency(self):
+    if self.curr_type != 'usd':
+        temp = google_currency.convert('usd', self.curr_type, 100000)
+        curr_rate = float(temp['amount']) / 100000
+        return curr_rate
     else:
-        form = UploadFileForm()
-    data = {        
-            "info" : order_list , 
-            'form' : form
-        }
-    return render(request , "kargotakip.html" , data)
+        return 1
 ```
 
-- Kullanıcı yüklediği Excel dosyasını işler (`uploaded_file`)  
-- Tüm siparişler `order_track` fonksiyonu ile güncellenir  
+**Neden her pazar için ayrı refresh_token?**
+- Amazon SP-API her pazar için ayrı yetkilendirme gerektirir
+- US/CA → Aynı token kullanabilir
+- EU (UK/DE/FR) → Aynı token
+- Japonya → Ayrı token
+- Avustralya → Ayrı token
 
-### Order Track Fonksiyonu: `order_track`
+---
 
+## 🔌 API Kullanımı
+
+### Amazon SP-API (Selling Partner API)
+
+#### Kullanılan Endpoint'ler:
+
+1. **Products.get_item_offers(asin, condition='New')**
+   - **Amaç:** Fiyat ve rekabet bilgisi
+   - **Dönen Veri:**
+     ```json
+     {
+       "Summary": {
+         "LowestPrices": [{
+           "condition": "new",
+           "LandedPrice": {"Amount": 29.99}
+         }],
+         "BuyBoxPrices": [{
+           "LandedPrice": {"Amount": 32.99}
+         }],
+         "NumberOfOffers": [{
+           "fulfillmentChannel": "Amazon",
+           "OfferCount": 15
+         }]
+       },
+       "Offers": [{
+         "SellerId": "...",
+         "IsBuyBoxWinner": true,
+         "IsFulfilledByAmazon": true,
+         "ListingPrice": {"Amount": 32.99}
+       }]
+     }
+     ```
+
+2. **Catalog.get_item(asin)**
+   - **Amaç:** Ürün detayları
+   - **Dönen Veri:**
+     ```json
+     {
+       "AttributeSets": [{
+         "Title": "Product Name",
+         "PackageDimensions": {
+           "Height": {"value": 10},
+           "Length": {"value": 20},
+           "Width": {"value": 15},
+           "Weight": {"value": 500}
+         }
+       }],
+       "SalesRankings": [{
+         "Rank": 12345
+       }]
+     }
+     ```
+
+3. **ProductFees.get_product_fees_estimate_for_asin(asin, price, currency, is_fba=True)**
+   - **Amaç:** Amazon ücret tahmini
+   - **Dönen Veri:**
+     ```json
+     {
+       "FeesEstimateResult": {
+         "FeesEstimate": {
+           "TotalFeesEstimate": {"Amount": 5.47},
+           "FeeDetailList": [
+             {
+               "FeeType": "ReferralFee",
+               "FeeAmount": {"Amount": 4.50}
+             },
+             {
+               "FeeType": "FBAFees",
+               "FeeAmount": {"Amount": 0.97}
+             }
+           ]
+         }
+       }
+     }
+     ```
+
+#### Rate Limiting
+- Amazon SP-API'da her endpoint için farklı limitler var
+- Proje `@throttle_retry` decorator kullanmıyor (manuel sleep ile yönetiliyor)
+- `main_worker.py`: Her 10 iterasyonda 5 saniye bekler
+
+---
+
+## ⚙️ Worker Sistemi
+
+### Threading Yapısı
+
+#### Neden Threading?
+- SP-API çağrıları yavaş (her ASIN için 3 API çağrısı: buy price, sell price, fees)
+- Sequential işlem: 100 ASIN → ~10 dakika
+- Threading ile: 100 ASIN → ~2 dakika (5-6x hızlanma)
+
+#### Thread Dağılımı:
 ```python
-def order_track(apiKey):
-    tracker = TrackingApi(apiKey)
-    tracker.sandbox = False
-    order_info_list = []
-    Orders = [x for x in Order.objects.values()]
+# Her iterasyonda maksimum ~30 thread başlatılır:
+#   - 9 thread: Buy Price
+#   - 9 thread: Sell Price
+#   - 9 thread: Calculate
+#   - 1 thread: Keepa Worker (marke başına)
+
+# Örnek akış:
+iteration 1:
+  ├─ 5 Buy Price thread'i (ASIN1-5)
+  ├─ 0 Sell Price (henüz buy fiyatı yok)
+  └─ 0 Calculate
+
+iteration 2:
+  ├─ 4 Buy Price (ASIN6-9)
+  ├─ 5 Sell Price (ASIN1-5 buy fiyatı hazır)
+  └─ 0 Calculate
+
+iteration 3:
+  ├─ 0 Buy Price (hepsi bitti)
+  ├─ 4 Sell Price (ASIN6-9)
+  └─ 5 Calculate (ASIN1-5 hem buy hem sell hazır)
+
+iteration 4:
+  ├─ 0 Buy Price
+  ├─ 0 Sell Price
+  └─ 4 Calculate (ASIN6-9)
+  → Döngü bitti, sonuç döndür
+```
+
+### Hata Yönetimi
+
+#### Error_Code Sistemi:
+- Her ASIN için `Error_Code` boolean alanı var
+- API'dan hata dönerse:
+  1. `Error_Code = True` işaretlenir
+  2. İlgili alana negatif error code yazılır
+  3. O ASIN bir daha işlenmez (döngüde filtrelenir)
+
+#### Yaygın Hatalar:
+- **Unauthorized (-666666):** Yanlış credentials veya token süresi dolmuş
+- **InvalidInput (-555555):** ASIN geçersiz veya pazar uyumsuzluğu
+- **LowestPrices (-222222):** Ürün stokta yok
+- **Low_Ratio (-777777):** Ratio < 1.5 (karlı değil)
+
+---
+
+## 🚀 Kurulum
+
+### Gereksinimler
+```bash
+# Python 3.8+
+# MySQL (PythonAnywhere hesabı)
+```
+
+### Django (amazon2fake) Kurulumu
+```bash
+cd amazon2fake
+
+# Virtual environment
+python -m venv venv
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # Linux/Mac
+
+# Bağımlılıklar
+pip install -r requirements.txt
+
+# Migrate
+python manage.py migrate
+
+# Superuser oluştur
+python manage.py createsuperuser
+
+# Sunucuyu başlat
+python manage.py runserver
+```
+
+### Worker (amzsrvr) Kurulumu
+```bash
+cd amzsrvr
+
+# Virtual environment
+python -m venv venv
+venv\Scripts\activate
+
+# Bağımlılıklar
+pip install -r requirements.txt
+
+# MyMarketPlace.py'de credentials güncelle
+# - lwa_app_id
+# - lwa_client_secret
+# - aws_access_key
+# - aws_secret_key
+# - role_arn
+# - refresh_token (her pazar için)
+
+# Worker'ı başlat
+python main_controller.py
+```
+
+### Veritabanı Ayarları
+
+#### PythonAnywhere MySQL:
+```python
+# amazon2fake/amazon2/settings.py
+DATABASES = {
+    'mysql': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'jaylee54$deneme2',
+        'USER': 'jaylee54',
+        'PASSWORD': 'muratyl1A',
+        'HOST': 'jaylee54.mysql.pythonanywhere-services.com'
+    }
+}
+```
+
+#### SSH Tunnel (Worker için):
+```python
+# amzsrvr/main_controller.py
+sshtunnel.SSHTunnelForwarder(
+    ('ssh.pythonanywhere.com'),
+    ssh_username='jaylee54',
+    ssh_password='b3k1rs4m3t',
+    remote_bind_address=('jaylee54.mysql.pythonanywhere-services.com', 3306)
+)
+```
+
+---
+
+## 📊 Kullanım Senaryoları
+
+### Senaryo 1: Keepa'dan Toplu Ürün Analizi
+**Hedef:** 500 ASIN'i hızlıca taramak
+
+1. Keepa'da UK pazarı için rapor çıkar (2 Excel: US + UK)
+2. Django paneline giriş yap
+3. "fba/uk" sayfasına git
+4. "Excel Yükle" bölümüne her iki dosyayı ekle
+5. Worker ~5-10 dakikada işler (Keepa Worker hızlıdır)
+6. Sayfayı yenile, karlı ürünleri filtrele:
+   - Profit Percentage > %30
+   - FBA Seller Count < 10
+7. Beğendiklerini Pool'a ekle
+8. Excel olarak indir
+
+### Senaryo 2: Manuel ASIN Sorgusu
+**Hedef:** Birkaç ASIN'i gerçek zamanlı kontrol etmek
+
+1. "fba/ca" sayfasına git
+2. Textarea'ya ASIN listesi yapıştır:
+   ```
+   B07XYZ1234
+   B08ABC5678
+   B09DEF9012
+   ```
+3. "Ekle" butonuna bas
+4. Worker ~2-5 dakika içinde işler (SP-API daha yavaştır)
+5. Sayfayı yenile, sonuçları gör
+6. Karlı olanı bulursan Pool'a ekle
+
+### Senaryo 3: Günlük Rutin Kontrol
+**Hedef:** Pool'daki ürünlerin fiyatlarını güncelle
+
+1. Pool sayfasına git ("fba/uk/pool")
+2. Tüm ürünleri seç
+3. "Silinen Listele" → Tüm ürünleri geçici sil (Is_Deleted=True)
+4. Ana listeye geri dön
+5. Pool'daki ASIN'leri textarea'ya yapıştır
+6. Worker yeniden işleyecek (güncel fiyatlarla)
+7. Karlılık değiştiyse fark edeceksin
+
+---
+
+## 🔐 Güvenlik Notları
+
+> **UYARI:** Bu README'de güvenlik nedeniyle şifreler ve API key'ler gösterilmiştir. Production'da mutlaka `.env` dosyası kullanın!
+
+### Django SECRET_KEY
+```python
+# settings.py
+import os
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'default-key-for-dev')
+```
+
+### Amazon SP-API Credentials
+```python
+# MyMarketPlace.py
+import os
+credentials = dict(
+    lwa_app_id=os.environ.get('AMAZON_APP_ID'),
+    lwa_client_secret=os.environ.get('AMAZON_SECRET'),
     ...
-    delivery_status = data.get('delivery_status').upper()
-    order = Order.objects.get(Tracknumber = tracknumber)
-    ...
-    order.save()
+)
 ```
 
-- Tüm siparişleri alır ve Tracking API üzerinden günceller.  
-- `delivery_status` alanına göre siparişin durumu (`Status`) güncellenir:  
-  - `"delivered"` → success  
-  - 2 gün geçti → warning  
-  - 5 gün geçti → danger  
-
-- Son checkpoint zamanı hesaplanır ve kullanıcıya `"lastupdate"` olarak gösterilir.  
-
-### Tracking API
-
-`TrackingApi` sınıfı, üçüncü parti kargo API’si ile haberleşir:
-
+### MySQL Şifreleri
 ```python
-class TrackingApi:
-    baseApi = "https://api.trackingmore.com"
-    apiVersion = "v3"
-    def doRequest(self, api_path, post_data="", method="get"):
-        ...
-        req = urllib.request.Request(url, post_data, headers=headers, method=method)
-        with urllib.request.urlopen(req) as response:
-            return response.read()
+# .env dosyası
+MYSQL_HOST=jaylee54.mysql.pythonanywhere-services.com
+MYSQL_USER=jaylee54
+MYSQL_PASSWORD=***
+MYSQL_DB=jaylee54$deneme2
 ```
 
-- `create` isteği ile takip numarası kaydedilir  
-- `get` isteği ile takip durumu alınır  
+---
 
-### File Upload Fonksiyonu: `uploaded_file`
+## 🐛 Bilinen Sorunlar ve Çözümler
 
+### 1. Worker Takılıyor
+**Sebep:** SP-API rate limiting veya network hatası  
+**Çözüm:**
 ```python
-def uploaded_file(file , data):
-    pd_file = pd.read_excel(file)
-    pd_file = pd_file.where(pd.notnull(pd_file), None)
-    carrier = [x for x in pd_file['Carrier']]
-    trackingID = [x for x in pd_file['Tracking ID']]
-    fileAmazonOrderId = [x for x in pd_file['AmazonOrderId']]
-    dbAmazonOrderId = [x.get('SATICI_SIPARIS_NUMARASI') for x in data.objects.values()]
-    common_tracks = common_member(fileAmazonOrderId , dbAmazonOrderId)
-    for i in common_tracks:
-        index = pd_file.index[pd_file['AmazonOrderId'] == i].tolist()
-        try: 
-            track = Order.objects.get(AmazonOrderId= fileAmazonOrderId[index[0]])
-            if track.Tracknumber == None: track.Tracknumber = trackingID[index[0]] if trackingID[index[0]] is not None else None
-            if track.Tracknumber2 == None and track.Tracknumber != trackingID[index[0]] : track.Tracknumber2 = trackingID[index[0]] if trackingID[index[0]] is not None else None
-            if track.Courier_Name == None or track.Courier_Name != courier_code(carrier[index[0]]): track.Courier_Name = courier_code(carrier[index[0]]) if carrier[index[0]] is not None else None              
-            track.save()            
-        except Order.DoesNotExist:
-            track = Order(
-            AmazonOrderId  = fileAmazonOrderId[index[0]] , 
-            Tracknumber = trackingID[index[0]] if trackingID[index[0]] is not None else None , 
-            Courier_Name = courier_code(carrier[index[0]]) if carrier[index[0]] is not None else None 
-            )
-            track.save()
+# main_controller.py içinde try-except var
+# Hata olursa 200 saniye sonra tekrar dener
+# Log kontrolü: SW_LOG.xlsx (şu an pasif)
 ```
 
-- Excel dosyası yüklenir ve Amazon siparişleri ile eşleştirilir.  
-- Tracking numarası ve kargo bilgileri veritabanına kaydedilir veya güncellenir.  
+### 2. Excel Yükleme Hatası
+**Sebep:** Keepa Excel formatı değişmiş olabilir  
+**Çözüm:**
+```python
+# fileupload.py:22-23 satırlarında sütun isimleri
+# Keepa'nın yeni formatıyla karşılaştır
+# Örnek: 'Buy Box: Current' → 'BuyBox: Current' gibi değişiklikler
+```
 
+### 3. Kur Çevirimi Hatası
+**Sebep:** `google_currency` API'si yanıt vermiyor  
+**Çözüm:**
+```python
+# MyMarketPlace.py:current_currency()
+# Manuel kur girişi:
+self.curr_rate = 1.27  # USD -> CAD (örnek)
+```
 
+### 4. Thread Çakışması
+**Sebep:** Aynı ASIN için birden fazla thread main_dataframe'i güncelliyor  
+**Çözüm:**
+```python
+# Şu an böyle bir koruma YOK
+# Gelecek güncelleme: threading.Lock() kullanılabilir
+```
+
+---
+
+## 📈 Performans İyileştirmeleri
+
+### Yapılabilecekler:
+1. **Redis Cache:** Sık sorgulanan ASIN'leri cache'le
+2. **Celery:** Dramatiq yerine Celery kullanımı
+3. **PostgreSQL:** MySQL yerine PostgreSQL (JSON alanları için)
+4. **API Pooling:** SP-API batch endpoint'lerini kullan
+5. **WebSocket:** Gerçek zamanlı işlem durumu gösterimi
+
+---
+
+## 🤝 Katkıda Bulunma
+
+Bu proje özel kullanım içindir, ancak hata bildirimlerini memnuniyetle karşılarız.
+
+---
+
+## 📄 Lisans
+
+Proprietary - Tüm hakları saklıdır.
+
+---
+
+## 📞 İletişim
+
+Sorularınız için: [Email veya GitHub Issue]
+
+---
+
+**Son Güncelleme:** 2025-12-11  
+**Versiyon:** 1.0.0  
+**Durum:** Production 🚀
